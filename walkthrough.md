@@ -111,7 +111,7 @@ the result of successfully running the function _or_ one or more errors.
 
 Effect handles this by returning a "two-sided" `Either` object with _either_ one of two properties:
 
-- `left`, containing one or more errors; or
+- `left`, containing one or more errors; OR
 - `right`, containing the successful return value.
 
 To go that route we use `S.decodeUnknownEither`:
@@ -234,24 +234,37 @@ type ProductId = typeof ProductId.Type
 
 To define custom rules for validating data, we use **filters**.
 
+A filter can consist of an arbitrary function:
+
 ```ts
 const LongString = pipe(
   S.String,
   S.filter(s => (s.length >= 10 ? undefined : 'a string at least 10 chars long'))
 )
+```
 
-const Cuid = pipe(
-  S.String, //
-  S.brand('Cuid'),
-  S.pattern(/^[a-z0-9]{24}$/) // `pattern` is a built-in filter
-)
+@effect/schema also includes a ton of built-in filters for strings (`maxLength`, `minLength`,
+`length`, `startsWith`, `endsWith`, `includes`, `pattern`, `trimmed`, `lowercased`), numbers
+(`greaterThan`, `greaterThanOrEqual`, `positive`, `negative`, `multipleOf`, etc.), BigInts,
+BigDecimals, durations, and arrays (`maxItems`, `minItems`, `itemsCount`).
+
+So we could replace the above with this:
+
+```ts
+const LongString = pipe(S.String, S.minLength(10))
+```
+
+Here's an example of a branded string with a specific format:
+
+```ts
+const Cuid = pipe(S.String, S.brand('Cuid'), S.pattern(/^[a-z0-9]{24}$/))
 type Cuid = typeof Cuid.Type
 ```
 
 > [!NOTE]
 >
 > `pipe` is a utility function provided by Effect; it takes a value followed by an number of
-> functions that create a "pipeline. It sends the value through the pipeline, passing the output
+> functions that create a "pipeline". It sends the value through the pipeline, passing the output
 > of each function to the next (analogous to the `|` pipe operator in PowerShell or Unix).
 >
 > ```ts
