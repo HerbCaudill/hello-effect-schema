@@ -111,7 +111,7 @@ the result of successfully running the function _or_ one or more errors.
 
 Effect handles this by returning a "two-sided" `Either` object with _either_ one of two properties:
 
-- `left`, containing one or more errors; and
+- `left`, containing one or more errors; or
 - `right`, containing the successful return value.
 
 To go that route we use `S.decodeUnknownEither`:
