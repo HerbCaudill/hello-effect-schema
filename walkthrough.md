@@ -1,12 +1,14 @@
-```ts
-import { Schema as S } from '@effect/schema'
-```
+# @effect/schema walkthrough
+
+These are my notes as I work my way through the documentation.
 
 ## Creating a schema
 
 This is a schema with two properties: `name` is a string, and `age` is a number that comes in as a string.
 
 ```ts
+import { Schema as S } from '@effect/schema'
+
 class Person extends S.Class<Person>('Person')({
   name: S.String,
   age: S.NumberFromString,
@@ -25,9 +27,9 @@ const decode = S.decodeSync(Person) // creates a decoder for Person data
 const alice: Person = {
   name: 'alice',
   age: 'forty-two',
-  //   ~~~~~~~~~~~~ Type 'string' is not assignable to 'number'
+  //   ~~~~~~~~~~~ Type 'string' is not assignable to 'number'
   foo: 'pizza',
-  //   ~~~~~~~~ 'foo' does not exist in type 'Person'
+  //   ~~~~~~~ 'foo' does not exist in type 'Person'
 }
 ```
 
