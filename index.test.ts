@@ -1,7 +1,7 @@
-import { it, expect, expectTypeOf, describe } from 'vitest'
-import { ParseResult, Pretty, Schema as S } from '@effect/schema'
+import { ParseResult, Schema as S } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
-import { Effect, pipe } from 'effect'
+import { Either, pipe } from 'effect'
+import { assert, describe, expect, expectTypeOf, it } from 'vitest'
 
 describe('Schema', () => {
   describe('Validation', () => {
@@ -26,12 +26,40 @@ describe('Schema', () => {
     })
   })
 
+  describe('Error handling', () => {
+    it('"safe" error handling using `Either`', () => {
+      const decode = S.decodeUnknownEither(S.DateFromString)
+      const result = decode(-1234)
+      assert(Either.isLeft(result))
+      expect(result.left).toMatchInlineSnapshot(`
+          [ParseError: DateFromString
+          └─ Encoded side transformation failure
+             └─ Expected a string, actual -1234]
+        `)
+    })
+  })
+
   describe('Struct schema', () => {
     const Person = S.Struct({
       name: S.String,
       age: S.NumberFromString,
     })
     type Person = typeof Person.Type
+
+    const alice1: Person = {
+      name: 'alice',
+      // @ts-expect-error
+      age: 'forty-two',
+      // ~~ Type 'string' is not assignable to 'number'
+    }
+
+    const alice2: Person = {
+      name: 'alice',
+      age: 42,
+      // @ts-expect-error
+      foo: 'pizza',
+      // ~~ 'foo' does not exist in type 'Person'
+    }
 
     const p = {
       name: 'Alice',
@@ -243,6 +271,17 @@ describe('Schema', () => {
         const decode = S.decodeUnknownSync(LocalDateFromString)
         expect(() => decode('foo')).toThrow(/string could not be parsed as LocalDate/)
       })
+
+      it('"safe" error handling using `Either`', () => {
+        const decode = S.decodeUnknownEither(LocalDateFromString)
+        const result = decode('foo')
+        assert(Either.isLeft(result))
+        expect(result.left).toMatchInlineSnapshot(`
+          [ParseError: (string <-> <declaration schema>)
+          └─ Transformation process failure
+             └─ string could not be parsed as LocalDate]
+        `)
+      })
     })
 
     it('validate LocalDate', () => {
@@ -378,15 +417,13 @@ describe('Schema', () => {
           expect(entry.timestamp).toBeInstanceOf(Date)
         })
       })
+
       describe('using `Schema.withConstructorDefault`', () => {
         const TimeEntry = S.Struct({
           id: TimeEntryId,
           userId: UserId,
           date: LocalDateFromString,
-          timestamp: S.Number.pipe(
-            S.propertySignature,
-            S.withConstructorDefault(() => new Date().getTime())
-          ),
+          timestamp: S.optional(S.DateFromNumber, { default: () => new Date() }),
         })
         type TimeEntry = typeof TimeEntry.Type
 
