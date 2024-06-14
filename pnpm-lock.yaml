@@ -14,6 +14,9 @@ importers:
       '@js-joda/core':
         specifier: ^5.6.2
         version: 5.6.2
+      '@paralleldrive/cuid2':
+        specifier: ^2.2.2
+        version: 2.2.2
       effect:
         specifier: ^3.3.1
         version: 3.3.1
@@ -181,6 +184,13 @@ packages:
 
   '@js-joda/core@5.6.2':
     resolution: {integrity: sha512-ow4R+7C24xeTjiMTTZ4k6lvxj7MRBqvqLCQjThQff3RjOmIMokMP20LNYVFhGafJtUx/Xo2Qp4qU8eNoTVH0SA==}
+
+  '@noble/hashes@1.4.0':
+    resolution: {integrity: sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==}
+    engines: {node: '>= 16'}
+
+  '@paralleldrive/cuid2@2.2.2':
+    resolution: {integrity: sha512-ZOBkgDwEdoYVlSeRbYYXs0S9MejQofiVYoTbKzy/6GQa39/q5tQU2IX46+shYnUkpEl3wc+J6wRlar7r2EK2xA==}
 
   '@rollup/rollup-android-arm-eabi@4.18.0':
     resolution: {integrity: sha512-Tya6xypR10giZV1XzxmH5wr25VcZSncG0pZIjfePT0OVBvqNEurzValetGNarVrGiq66EBVAFn15iYX4w6FKgQ==}
@@ -668,6 +678,12 @@ snapshots:
   '@jridgewell/sourcemap-codec@1.4.15': {}
 
   '@js-joda/core@5.6.2': {}
+
+  '@noble/hashes@1.4.0': {}
+
+  '@paralleldrive/cuid2@2.2.2':
+    dependencies:
+      '@noble/hashes': 1.4.0
 
   '@rollup/rollup-android-arm-eabi@4.18.0':
     optional: true

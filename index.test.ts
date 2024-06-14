@@ -1,6 +1,6 @@
-import { ParseResult, Schema as S } from '@effect/schema'
+import { ParseResult, Schema as S, TreeFormatter } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
-import { Either, pipe } from 'effect'
+import { Context, Effect as E, Either, Layer, pipe } from 'effect'
 import { assert, describe, expect, expectTypeOf, it } from 'vitest'
 
 describe('Schema', () => {
@@ -233,7 +233,7 @@ describe('Schema', () => {
     )
 
     // Cuid is a branded String
-    const Cuid = pipe(S.String, S.brand('Cuid'), S.pattern(/^[a-z0-9]{24}$/))
+    const Cuid = pipe(S.String, S.brand('Cuid')) //, S.pattern(/^[a-z0-9]{24}$/))
     type Cuid = typeof Cuid.Type
 
     // different IDs are branded Cuids
@@ -243,6 +243,11 @@ describe('Schema', () => {
 
     const UserId = pipe(Cuid, S.brand('UserId'))
     type UserId = typeof UserId.Type
+
+    const ProjectId = pipe(Cuid, S.brand('ProjectId'))
+    type ProjectId = typeof ProjectId.Type
+
+    type Project = { id: ProjectId; code: string }
 
     const TimeEntry = S.Struct({
       id: TimeEntryId,
@@ -417,42 +422,62 @@ describe('Schema', () => {
           expect(entry.timestamp).toBeInstanceOf(Date)
         })
       })
+    })
 
-      describe('using `Schema.withConstructorDefault`', () => {
-        const TimeEntry = S.Struct({
-          id: TimeEntryId,
-          userId: UserId,
-          date: LocalDateFromString,
-          timestamp: S.optional(S.DateFromNumber, { default: () => new Date() }),
+    describe('With dependencies', () => {
+      // https://github.com/Effect-TS/effect/blob/main/packages/schema/README.md#declaring-dependencies
+
+      it.only('decodes using a service provider', async () => {
+        /** Give this class a list of projects and you can use it to look up projectIds  */
+        class ProjectsProvider {
+          constructor(private readonly projects: Project[]) {}
+          getByCode = (code: string) => this.projects.find(p => p.code === code)
+        }
+
+        /** This defines the tag for the ProjectsProvider (not really sure what it's for) */
+        class Projects extends Context.Tag('Projects')<Projects, ProjectsProvider>() {}
+
+        /** Takes a code, somehow gets access to the injected dependency, and uses that to return an
+         * effect containing either the corresponding `projectId` or an error  */
+        const lookupProject = (code: string): E.Effect<Project, Error, Projects> =>
+          Projects.pipe(
+            E.flatMap(projects => {
+              const project = projects.getByCode(code)
+              return project //
+                ? E.succeed(project)
+                : E.fail(new Error(`Project with code "${code}" not found`))
+            })
+          )
+
+        /** Schema for a `projectId` encoded as a `code` */
+        const ProjectIdFromCode = S.transformOrFail(S.String, ProjectId, {
+          decode: (code, _, ast) => {
+            return lookupProject(code).pipe(
+              E.mapBoth({
+                onFailure: e => new ParseResult.Type(ast, code, e.message),
+                onSuccess: p => p.id,
+              })
+            )
+          },
+          encode: ParseResult.succeed, // unclear on this - presumably we'd want this to work in the opposite direction as well?
         })
-        type TimeEntry = typeof TimeEntry.Type
 
-        it('decodes TimeEntry with default timestamp', () => {
-          const decode = S.decodeSync(TimeEntry)
-          // @ts-ignore
-          const result = decode({
-            id: 'pfh0haxfpzowht3oi213cqos',
-            userId: 'tz4a98xxat96iws9zmbrgj3a',
-            date: '2024-06-10',
-          })
+        const TestProjects = new ProjectsProvider([
+          { id: '0002', code: 'out' },
+          { id: '0003', code: 'overhead' },
+          { id: '0004', code: 'security' },
+        ] as Project[])
 
-          // the current Date is automatically added
-          expect(result.timestamp).toBeInstanceOf(Date)
+        const decode = (code: string) =>
+          pipe(
+            code,
+            S.decodeUnknown(ProjectIdFromCode),
+            E.provideService(Projects, TestProjects)
+            // E.mapError(e => TreeFormatter.formatError(e))
+          )
 
-          // when encoded, the timestamp is encoded as a number (UNIX timestamp)
-          const encoded = pipe(result, S.encodeSync(TimeEntry))
-          expect(encoded.timestamp).toBeTypeOf('number')
-        })
-
-        it('constructs TimeEntry with default timestamp', () => {
-          const entry = TimeEntry.make({
-            id: 'pfh0haxfpzowht3oi213cqos' as TimeEntryId,
-            userId: 'tz4a98xxat96iws9zmbrgj3a' as UserId,
-            date: LocalDate.now(),
-          })
-
-          expect(entry.timestamp).toBeInstanceOf(Date)
-        })
+        const projectId = E.runSync(decode('out'))
+        expect(projectId).toBe('0002')
       })
     })
   })
