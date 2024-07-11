@@ -3,58 +3,7 @@ import { LocalDate } from '@js-joda/core'
 import { Context, Effect as E, Either, Layer, pipe } from 'effect'
 import { assert, describe, expect, expectTypeOf, it } from 'vitest'
 import { createId as _createId } from '@paralleldrive/cuid2'
-
-// LocalDate
-const isLocalDate = (x: unknown): x is LocalDate => x instanceof LocalDate
-const LocalDateSchema = S.declare(isLocalDate)
-const LocalDateFromString = S.transformOrFail(
-  S.String, // source
-  LocalDateSchema, // target
-  {
-    decode: (s, options, ast) => {
-      try {
-        return ParseResult.succeed(LocalDate.parse(s))
-      } catch (e) {
-        return ParseResult.fail(new ParseResult.Type(ast, s, `string could not be parsed as LocalDate`))
-      }
-    },
-    encode: d => ParseResult.succeed(d.toString()),
-  }
-)
-
-const Cuid = pipe(S.String, S.brand('Cuid'))
-type Cuid = typeof Cuid.Type
-const createId = () => _createId() as Cuid
-
-const UserId = pipe(Cuid, S.brand('UserId'))
-type UserId = typeof UserId.Type
-
-const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
-type TimeEntryId = typeof TimeEntryId.Type
-
-// Projects
-
-const ProjectId = pipe(Cuid, S.brand('ProjectId'))
-type ProjectId = typeof ProjectId.Type
-
-type Project = { id: ProjectId; code: string }
-
-// TimeEntry
-
-class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
-  id: S.optional(TimeEntryId, { default: () => createId() as TimeEntryId }),
-  // userId: UserId,
-  date: LocalDateFromString,
-  // duration: S.Number,
-  projectId: ProjectId,
-  // clientId: S.optional(ProjectId),
-  // description: S.optional(S.String),
-  timestamp: S.optional(S.DateFromNumber, { default: () => new Date() }),
-}) {
-  static decode = S.decodeSync(TimeEntry)
-  static encode = S.encodeSync(TimeEntry)
-}
-type TimeEntryEncoded = typeof TimeEntry.Encoded
+import { LocalDateFromString, ProjectId, TimeEntry, type Project, type TimeEntryEncoded, type UserId } from './schema'
 
 describe('LocalDate', () => {
   const encode = S.encodeSync(LocalDateFromString)
@@ -91,7 +40,9 @@ describe('LocalDate', () => {
 describe('TimeEntry', () => {
   it('decodes TimeEntry', () => {
     const decoded = TimeEntry.decode({
+      userId: '0001' as UserId,
       date: '2024-06-10',
+      duration: 60,
       projectId: '0001',
     })
 
@@ -110,7 +61,9 @@ describe('TimeEntry', () => {
 
   it('encodes TimeEntry', () => {
     const decoded = TimeEntry.decode({
+      userId: '0001' as UserId,
       date: '2024-06-10',
+      duration: 60,
       projectId: '0001',
     })
 
@@ -131,11 +84,13 @@ describe('TimeEntry', () => {
       getByCode = (code: string) => this.projects.find(p => p.code === code)
     }
 
-    /** This defines the tag for the ProjectsProvider (not really sure what it's for) */
+    /** This defines the tag for the ProjectsProvider */
     class Projects extends Context.Tag('Projects')<Projects, ProjectsProvider>() {}
 
-    /** Takes a code, somehow gets access to the injected dependency, and uses that to return an
-     * effect containing either the corresponding `projectId` or an error  */
+    /**
+     * Takes a code, somehow gets access to the injected dependency, and uses that to return an
+     * effect containing either the corresponding `projectId` or an error
+     * */
     const lookupProject = (code: string): E.Effect<Project, Error, Projects> =>
       Projects.pipe(
         E.flatMap(projects => {
