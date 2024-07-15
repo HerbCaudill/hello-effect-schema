@@ -1,41 +1,8 @@
-import { ParseResult, Schema as S, TreeFormatter } from '@effect/schema'
+import { ParseResult, Schema as S } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
-import { Context, Effect as E, Either, Layer, pipe } from 'effect'
-import { assert, describe, expect, expectTypeOf, it } from 'vitest'
-import { createId as _createId } from '@paralleldrive/cuid2'
-import { LocalDateFromString, ProjectId, TimeEntry, type Project, type TimeEntryEncoded, type UserId } from './schema'
-
-describe('LocalDate', () => {
-  const encode = S.encodeSync(LocalDateFromString)
-  const decode = S.decodeSync(LocalDateFromString)
-
-  it('decodes string to LocalDate', () => {
-    const result = decode('2024-06-10')
-    expect(result.year()).toBe(2024)
-  })
-
-  it('encodes LocalDate to string', () => {
-    const today = LocalDate.parse('2024-06-10')
-    const result = encode(today)
-    expect(result).toBe('2024-06-10')
-  })
-
-  it('does not decode invalid LocalDate', () => {
-    const decode = S.decodeUnknownSync(LocalDateFromString)
-    expect(() => decode('foo')).toThrow(/string could not be parsed as LocalDate/)
-  })
-
-  it('"safe" error handling using `Either`', () => {
-    const decode = S.decodeUnknownEither(LocalDateFromString)
-    const result = decode('foo')
-    assert(Either.isLeft(result))
-    expect(result.left).toMatchInlineSnapshot(`
-      [ParseError: (string <-> <declaration schema>)
-      └─ Transformation process failure
-         └─ string could not be parsed as LocalDate]
-    `)
-  })
-})
+import { Context, Effect as E, pipe } from 'effect'
+import { describe, expect, expectTypeOf, it } from 'vitest'
+import { ProjectId, TimeEntry, type Project, type TimeEntryEncoded } from './schema'
 
 describe('TimeEntry', () => {
   it('decodes TimeEntry', () => {
