@@ -58,7 +58,7 @@ describe('TimeEntry', () => {
      * Takes a code,  gets access to the injected dependency, and uses that to return an
      * effect containing either the corresponding `projectId` or an error
      * */
-    const lookupProject = (code: string): E.Effect<Project, Error, Projects> =>
+    const lookupProject = (code: string) =>
       Projects.pipe(
         E.flatMap(projects => {
           const project = projects.getByCode(code)
