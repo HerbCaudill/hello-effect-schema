@@ -55,7 +55,7 @@ describe('TimeEntry', () => {
     class Projects extends Context.Tag('Projects')<Projects, ProjectsProvider>() {}
 
     /**
-     * Takes a code, somehow gets access to the injected dependency, and uses that to return an
+     * Takes a code,  gets access to the injected dependency, and uses that to return an
      * effect containing either the corresponding `projectId` or an error
      * */
     const lookupProject = (code: string): E.Effect<Project, Error, Projects> =>
