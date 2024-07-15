@@ -10,12 +10,18 @@ describe('DoneEntry', () => {
       content: 'Coded and compiled terabytes of data',
     })
 
+    // userId was cast as a UserId
+    expectTypeOf(decoded.userId).toMatchTypeOf<UserId>()
+
     // id was populated
     expect(decoded.id).toBeTypeOf('string')
     expect(decoded.id).toHaveLength(24)
 
     // date was parsed
     expect(decoded.date).toBeInstanceOf(LocalDate)
+    expect(decoded.date.year()).toBe(2024)
+    expect(decoded.date.monthValue()).toBe(6)
+    expect(decoded.date.dayOfMonth()).toBe(10)
 
     // content was left untouched
     expect(decoded.content).toBe('Coded and compiled terabytes of data')
@@ -40,6 +46,7 @@ describe('DoneEntry', () => {
 
     expectTypeOf(encoded).toMatchTypeOf<DoneEntryEncoded>()
 
+    // round trip
     const decodedAgain = DoneEntry.decode(encoded)
     expect(decodedAgain).toEqual(decoded)
   })
