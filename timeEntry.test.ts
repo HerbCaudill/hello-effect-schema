@@ -7,7 +7,7 @@ import { ProjectId, TimeEntry, type Project, type TimeEntryEncoded } from './sch
 describe('TimeEntry', () => {
   it('decodes TimeEntry', () => {
     const decoded = TimeEntry.decode({
-      userId: '0001' as UserId,
+      userId: '0001',
       date: '2024-06-10',
       duration: 60,
       projectId: '0001',
@@ -28,7 +28,7 @@ describe('TimeEntry', () => {
 
   it('encodes TimeEntry', () => {
     const decoded = TimeEntry.decode({
-      userId: '0001' as UserId,
+      userId: '0001',
       date: '2024-06-10',
       duration: 60,
       projectId: '0001',

@@ -5,7 +5,7 @@ import { DoneEntry, type DoneEntryEncoded, type UserId } from './schema'
 describe('DoneEntry', () => {
   it('decodes DoneEntry', () => {
     const decoded = DoneEntry.decode({
-      userId: '0001' as UserId,
+      userId: '0001',
       date: '2024-06-10',
       content: 'Coded and compiled terabytes of data',
     })
@@ -31,7 +31,7 @@ describe('DoneEntry', () => {
 
   it('encodes DoneEntry', () => {
     const decoded = DoneEntry.decode({
-      userId: '0001' as UserId,
+      userId: '0001',
       date: '2024-06-10',
       content: 'Coded and compiled terabytes of data',
     })
