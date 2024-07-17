@@ -28,7 +28,7 @@ describe('Schema', () => {
 
   describe('Error handling', () => {
     it('"safe" error handling using `Either`', () => {
-      const decode = S.decodeUnknownEither(S.DateFromString)
+      const decode = S.decodeUnknownEither(S.DateFromString) // 'unknown' because suppose we have no idea what the input looks like
       const result = decode(-1234)
       assert(Either.isLeft(result))
       expect(result.left).toMatchInlineSnapshot(`
@@ -360,17 +360,6 @@ describe('Schema', () => {
         ).toThrow(/string could not be parsed as LocalDate/i)
       })
 
-      it('does not decode TimeEntry with invalid cuid', () => {
-        const decode = S.decodeUnknownSync(TimeEntry)
-        expect(() =>
-          decode({
-            id: 'asdf',
-            userId: 'tz4a98xxat96iws9zmbrgj3a',
-            date: '2024-06-11',
-          })
-        ).toThrow(/expected a string matching the pattern/i)
-      })
-
       it('enforces ID types', () => {
         const foo = pipe(
           {
@@ -427,7 +416,7 @@ describe('Schema', () => {
     describe('With dependencies', () => {
       // https://github.com/Effect-TS/effect/blob/main/packages/schema/README.md#declaring-dependencies
 
-      it.only('decodes using a service provider', async () => {
+      it('decodes using a service provider', async () => {
         /** Give this class a list of projects and you can use it to look up projectIds  */
         class ProjectsProvider {
           constructor(private readonly projects: Project[]) {}

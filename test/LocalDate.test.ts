@@ -2,7 +2,7 @@ import { Schema as S } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
 import { Either } from 'effect'
 import { assert, describe, expect, expectTypeOf, it } from 'vitest'
-import { LocalDateFromString } from './schema'
+import { LocalDateFromString } from '../schema/LocalDate'
 
 describe('LocalDate', () => {
   const encode = S.encodeSync(LocalDateFromString)

@@ -1,6 +1,7 @@
 import { LocalDate } from '@js-joda/core'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { DoneEntry, type DoneEntryEncoded, type UserId } from './schema'
+import { DoneEntry, type DoneEntryEncoded } from '../schema/DoneEntry'
+import type { UserId } from '../schema/User'
 
 describe('DoneEntry', () => {
   it('decodes DoneEntry', () => {
