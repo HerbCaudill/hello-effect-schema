@@ -5,6 +5,7 @@ import { Cuid } from './Cuid'
 import { LocalDateFromString } from './LocalDate'
 import { ProjectId } from './Project'
 import { UserId } from './User'
+import { ClientId } from './Client'
 
 export const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
 export type TimeEntryId = typeof TimeEntryId.Type
@@ -15,7 +16,7 @@ export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   date: LocalDateFromString,
   duration: S.Number,
   projectId: ProjectId,
-  clientId: S.optional(ProjectId),
+  clientId: S.optional(ClientId),
   description: S.optional(S.String),
   timestamp: S.optional(S.DateFromNumber, { default: () => new Date() }),
 }) {
@@ -28,7 +29,21 @@ export type TimeEntryEncoded = typeof TimeEntry.Encoded
 export const TimeEntryFromString = S.transformOrFail(S.String, TimeEntry, {
   strict: true,
   decode: (s, _, ast) => {
+    // bullshit implementation
     const [userId, date, duration, projectId, clientId, description] = s.split('|')
+
+    // real implementation goes here
+
+    // find a projectId using ProjectFromString (to be written) which will use ProjectIdFromCode
+
+    // find a clientId (ditto)
+
+    // find a duration using DurationFromString
+
+    // strip out the project tag, the client tag, and the duration text; everything that's left is the description
+
+    // validate using basically the code in xdev (validation code inline for now)
+
     return ParseResult.succeed({
       userId,
       date,

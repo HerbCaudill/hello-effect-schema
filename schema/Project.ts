@@ -2,7 +2,6 @@ import { ParseResult, Schema as S } from '@effect/schema'
 import { Context, Effect as E, pipe } from 'effect'
 import { Cuid } from './Cuid'
 
-// branded ID
 export const ProjectId = pipe(Cuid, S.brand('ProjectId'))
 export type ProjectId = typeof ProjectId.Type
 
