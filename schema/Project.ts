@@ -30,7 +30,7 @@ const lookupProject = (code: string) =>
       return project //
         ? E.succeed(project)
         : E.fail(new Error(`Project with code "${code}" not found`))
-    })
+    }),
   )
 
 /** Schema for a `projectId` encoded as a `code` */
@@ -40,7 +40,7 @@ export const ProjectIdFromCode = S.transformOrFail(S.String, ProjectId, {
       E.mapBoth({
         onFailure: e => new ParseResult.Type(ast, code, e.message),
         onSuccess: p => p.id,
-      })
+      }),
     )
   },
   encode: ParseResult.succeed,

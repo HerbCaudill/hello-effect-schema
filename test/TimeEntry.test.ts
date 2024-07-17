@@ -109,7 +109,7 @@ describe('TimeEntry', () => {
       pipe(
         code, //
         S.decodeUnknown(ProjectIdFromCode),
-        E.provideService(Projects, TestProjects)
+        E.provideService(Projects, TestProjects),
       )
 
     const projectId = E.runSync(decode('out'))

@@ -70,5 +70,6 @@ export const TimeEntryFromString = S.transformOrFail(S.String, TimeEntry, {
       description: description.trim(),
     })
   },
-  encode: (_, options, ast) => ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode a TimeEntry')),
+  encode: (_, options, ast) =>
+    ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode a TimeEntry')),
 })
