@@ -8,6 +8,7 @@ import { TimeEntry, type TimeEntryEncoded } from '../schema/TimeEntry'
 describe('TimeEntry', () => {
   it('decodes TimeEntry', () => {
     const decoded = TimeEntry.decode({
+      originalText: '',
       userId: '0001',
       date: '2024-06-10',
       duration: 60,
@@ -29,6 +30,7 @@ describe('TimeEntry', () => {
 
   it('encodes TimeEntry', () => {
     const decoded = TimeEntry.decode({
+      originalText: '',
       userId: '0001',
       date: '2024-06-10',
       duration: 60,

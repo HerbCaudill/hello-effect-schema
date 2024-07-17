@@ -12,8 +12,10 @@ export type TimeEntryId = typeof TimeEntryId.Type
 
 export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   id: S.optional(TimeEntryId, { default: () => createId() as TimeEntryId }),
+  // TODO: we won't know userId and date from the input text, make them optional or create a subtype for parsing?
   userId: UserId,
   date: LocalDateFromString,
+  originalText: S.String,
   duration: S.Number,
   projectId: ProjectId,
   clientId: S.optional(ClientId),
@@ -48,6 +50,7 @@ export const TimeEntryFromString = S.transformOrFail(S.String, TimeEntry, {
       userId,
       date,
       duration: Number(duration),
+      originalText: input,
       projectId,
       clientId: clientId || undefined,
       description: description || undefined,
