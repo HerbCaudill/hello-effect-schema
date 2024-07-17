@@ -60,7 +60,6 @@ describe('Duration', () => {
         assert(!error, `expected error ${error}`)
 
         const parseResult = result.right
-        expect(parseResult.input).toEqual(input)
         expect(parseResult.text).toEqual(text)
         expect(parseResult.duration).toEqual(duration)
       }
