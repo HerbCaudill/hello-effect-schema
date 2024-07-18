@@ -47,14 +47,12 @@ export const TimeEntryFromString = S.transformOrFail(S.String, TimeEntry, {
     let duration: number = 0
     const decodeDuration = S.decodeEither(DurationFromString)
     const parsedDuration = decodeDuration(input)
-    if (Either.isLeft(parsedDuration)) {
-      return ParseResult.fail(
-        new ParseResult.Type(ast, input, parsedDuration.left.error.error.message.value),
-      )
-    } else {
-      duration = parsedDuration.right.duration
-      description = description.replace(parsedDuration.right.text, '')
-    }
+
+    // if the duration is not found or is invalid, return the error
+    if (Either.isLeft(parsedDuration)) return parsedDuration.left
+
+    duration = parsedDuration.right.duration
+    description = description.replace(parsedDuration.right.text, '')
 
     // strip out the project tag, the client tag, and the duration text; everything that's left is the description
 
