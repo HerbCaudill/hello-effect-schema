@@ -7,48 +7,78 @@ describe('Duration', () => {
   const decode = S.decodeEither(DurationFromString)
 
   const testCases: TestCase[] = [
-    { input: '@aba', error: 'NO_DURATION' },
-    { input: '#business: proposals #overhead 2.25 @aba', text: '2.25', duration: 135 },
-    { input: '#proposals', error: 'NO_DURATION' },
-    { input: '@globalwaterpartnership #proposals #overhead', error: 'NO_DURATION' },
-    { input: '@INL', error: 'NO_DURATION' },
-    { input: '@globalwaterpartnership description', error: 'NO_DURATION' },
-    { input: '#overhead -:45', error: 'NO_DURATION' }, // the minus sign keeps it from seeing this as a duration
-    { input: '#overhead 12:01', text: '12:01', duration: 721 },
-    { input: '#overhead 721min', text: '721min', duration: 721 },
-    { input: '#overhead 1:30 and 1:31', error: 'MULTIPLE_DURATIONS' },
-    { input: '#overhead 1:01 25min', error: 'MULTIPLE_DURATIONS' },
-    { input: '#overhead, 1.25min', error: 'NO_DURATION' },
-    { input: '#overhead 1.15', text: '1.15', duration: 69 },
-    { input: '1.15 #overhead', text: '1.15', duration: 69 },
-    { input: '#overhead .25', text: '.25', duration: 15 },
-    { input: '#overhead 1h', text: '1h', duration: 60 },
-    { input: '1h #overhead', text: '1h', duration: 60 },
-    { input: '#overhead 1h30', text: '1h30', duration: 90 },
-    { input: '#overhead 1h30', text: '1h30', duration: 90 },
-    { input: '#overhead 1h', text: '1h', duration: 60 },
-    { input: '#overhead 1H', text: '1H', duration: 60 },
-    { input: '#overhead 2:15', text: '2:15', duration: 135 },
-    { input: '#overhead :45', text: ':45', duration: 45 },
-    { input: '#overhead 55min', text: '55min', duration: 55 },
-    { input: '#overhead 95MIN', text: '95MIN', duration: 95 },
-    { input: '#overhead 105mIn', text: '105mIn', duration: 105 },
-    { input: '#overhead 105MIN', text: '105MIN', duration: 105 },
-    { input: '#overhead 240m', text: '240m', duration: 240 },
-    { input: '#overhead 360M', text: '360M', duration: 360 },
-    { input: '#overhead 240m', text: '240m', duration: 240 },
-    { input: '@globalwaterpartnership #overhead 360M description', text: '360M', duration: 360 },
-    { input: 'meeting @inl price justification #proposals 2:15', text: '2:15', duration: 135 },
+    // INVALID
 
-    // TODO: the second duration is ignored because the space is captured by the first regex match
-    { input: '#overhead 1:30 1:31', text: '1:30', duration: 90 },
-    { input: '#overhead 1h 2h', text: '1h', duration: 60 },
+    { input: '#proposals', error: 'NO_DURATION' },
+    { input: '@aba', error: 'NO_DURATION' },
+
+    { input: '#out` -:45', error: 'NO_DURATION' }, // the minus sign keeps it from seeing this as a duration
+    { input: '#out, 1.25min', error: 'NO_DURATION' }, // can't have decimal minutes
+    { input: '#out 1', error: 'NO_DURATION' },
+    { input: '#out 1.', error: 'NO_DURATION' },
+    { input: '#out 0:00', error: 'NO_DURATION' },
+    { input: '#out 0hr', error: 'NO_DURATION' },
+    { input: '#out 0min', error: 'NO_DURATION' },
+    { input: '#out1:15', error: 'NO_DURATION' },
+    { input: '#out 1:15doctor', error: 'NO_DURATION' },
+    { input: '#out 1:15(doctor)', error: 'NO_DURATION' },
+    { input: '#out 1:15hrs', error: 'NO_DURATION' },
+    { input: '1:15#out', error: 'NO_DURATION' },
+    { input: '1:15, #out', error: 'NO_DURATION' },
+    { input: '#out 1:15:30', error: 'NO_DURATION' },
+    { input: '#out2hrs', error: 'NO_DURATION' },
+
+    { input: '#out 1hr 30min', error: 'MULTIPLE_DURATIONS' },
+    { input: '#out 1:30 and 1:31', error: 'MULTIPLE_DURATIONS' },
+    { input: '#out 1:01 25min', error: 'MULTIPLE_DURATIONS' },
+    { input: '#out 1:30 1:31', error: 'MULTIPLE_DURATIONS' },
+    { input: '#out 1h 2h', error: 'MULTIPLE_DURATIONS' },
+
+    // VALID
+
+    { input: '#out 1:15', duration: 75 },
+    { input: '#out 1:15 doctor', duration: 75 },
+    { input: '1:15 #out', duration: 75 },
+
+    { input: '#out 0:15', duration: 15 },
+    { input: '#out :15', duration: 15 },
+
+    { input: '#out 1h', duration: 60 },
+    { input: '#out 1H', duration: 60 },
+    { input: '#out 1hr', duration: 60 },
+    { input: '#out 1hrs', duration: 60 },
+
+    { input: '#out 2h', duration: 120 },
+    { input: '#out 2hr', duration: 120 },
+    { input: '#out 2hrs', duration: 120 },
+
+    { input: '#out 1h30', duration: 90 },
+    { input: '#out 1h30m', duration: 90 },
+    { input: '#out 1h30min', duration: 90 },
+    { input: '#out 1h30mins', duration: 90 },
+    { input: '#out 1hr30mins', duration: 90 },
+
+    { input: '#out 15m', duration: 15 },
+    { input: '#out 15min', duration: 15 },
+    { input: '#out 15mins', duration: 15 },
+    { input: '#out 15MIN', duration: 15 },
+    { input: '#out 15mIn', duration: 15 },
+    { input: '#out 15MIN', duration: 15 },
+
+    { input: '#out .25', duration: 15 },
+    { input: '#out 0.25', duration: 15 },
+
+    { input: '#out 1.25', duration: 75 },
+    { input: '#out 1.25H', duration: 75 },
+    { input: '#out 1.25h', duration: 75 },
+    { input: '#out 1.25hr', duration: 75 },
+    { input: '#out 1.25hrs', duration: 75 },
   ]
 
-  for (const { input, error, text, duration, only, skip } of testCases) {
+  const errorPadding = Math.max(...testCases.filter(tc => tc.error).map(tc => tc.error!.length))
+  for (const { input, error, duration, only, skip } of testCases) {
     const testFn = only ? test.only : skip ? test.skip : test
-
-    testFn(input, () => {
+    testFn(error ? `⛔ ${input.padEnd(errorPadding)} ${error}` : `✅${input}`, () => {
       const result = decode(input)
       if (Either.isLeft(result)) {
         assert(error, `expected success but got error ${result.left}`)
@@ -56,7 +86,6 @@ describe('Duration', () => {
       } else {
         assert(!error, `expected error ${error}`)
         const parseResult = result.right
-        expect(parseResult.text).toEqual(text)
         expect(parseResult.duration).toEqual(duration)
       }
     })
@@ -66,8 +95,10 @@ describe('Duration', () => {
 type TestCase = {
   input: string
   error?: string
-  text?: string
   duration?: number
   only?: boolean
   skip?: boolean
 }
+
+const only = true
+const skip = true

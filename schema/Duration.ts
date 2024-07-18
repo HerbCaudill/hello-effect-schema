@@ -2,63 +2,53 @@ import { ParseResult, Schema as S } from '@effect/schema'
 
 /** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
 export class Duration extends S.Class<Duration>('Duration')({
-  /** The duration in text form, e.g. `1:45` */
+  /** The duration in text form, e.g. `1:15` */
   text: S.String,
 
-  /** The duration in minutes, e.g. 105 */
+  /** The duration in minutes, e.g. 75 */
   duration: S.Number,
 }) {}
 
 export const DurationFromString = S.transformOrFail(S.String, Duration, {
   strict: true,
   decode: (input, _, ast) => {
-    const parsers: Parser[] = [
-      {
-        // 2:45, :55
-        regex: /(?:^|\s)(?<text>(?<hrs>\d+)?:(?<mins>\d+))(?:$|\s)/gim,
-        accessor: ({ text, hrs = '0', mins = '0' }) => {
-          const duration = Number(hrs) * 60 + Number(mins)
-          return { text, duration }
-        },
-      },
-      {
-        // 1h45, 1h, 1h45m, 45m, 1h45min, 45min
-        regex:
-          /(?:^|\s)(?<text>(?<hrs>\d+)(hrs|hr|h)(?<minsOfHour>\d+(mins|min|m)?)?|((?<minsAlone>\d+)(mins|min|m)))(?:$|\s)/gim,
-        accessor: ({ text, hrs = '0', minsOfHour = '0', minsAlone = '0' }) => {
-          const mins = Number(minsOfHour) || Number(minsAlone)
-          const duration = Number(hrs) * 60 + mins
-          return { text, duration }
-        },
-      },
-      {
-        // 2.15, .25
-        regex: /(?:^|\s)(?<text>\d*\.?\d+)(?:$|\s)/gim,
-        accessor: ({ text }) => {
-          const duration = Math.round(Number(text) * 60)
-          return { text, duration }
-        },
-      },
+    const fail = (message: string) => ParseResult.fail(new ParseResult.Type(ast, input, message))
+
+    const formats = [
+      // 1:15, :15
+      /^(?<text>(?<hrs>\d+)?:(?<mins>\d+))$/i,
+      // 1h, 2hrs, 1h45, 1h45m
+      /^(?<text>(?<hrs>\d+)(hrs|hr|h)((?<mins>\d+)(mins|min|m)?)?)$/i,
+      // 45m, 45min
+      /^(?<text>(?<mins>\d+)(mins|min|m))$/i,
+      // 2.15, .25, 2.15hrs
+      /^(?<text>(?<hrsDecimal>\d*\.\d+)(hrs|hr|h)?)$/i,
     ]
 
-    const results = parsers.flatMap(({ regex, accessor }) => {
-      const matches = Array.from(input.matchAll(regex))
-      return matches.map(match => accessor(match.groups as Record<string, string>))
-    })
+    let result: { text: string; duration: number } | undefined
 
-    if (results.length > 1)
-      return ParseResult.fail(new ParseResult.Type(ast, input, 'MULTIPLE_DURATIONS'))
-    if (results.length === 0)
-      return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_DURATION'))
+    for (const word of input.split(/\s+/)) {
+      for (const format of formats) {
+        const match = word.match(format)
+        if (match) {
+          const { text, hrs = '0', mins = '0', hrsDecimal } = match.groups!
+          const duration = hrsDecimal
+            ? Math.round(Number(hrsDecimal) * 60) // decimal
+            : Number(hrs) * 60 + Number(mins) // hours+minutes
 
-    const { text, duration } = results[0]
-    return ParseResult.succeed({ text, duration, input })
+          // Make sure we got a valid non-zero number
+          if (duration <= 0 || isNaN(duration)) continue
+
+          // Can't have more than one result
+          if (result) return fail('MULTIPLE_DURATIONS')
+
+          result = { text, duration }
+        }
+      }
+    }
+
+    return result ? ParseResult.succeed(result) : fail('NO_DURATION')
   },
 
   encode: ({ text }) => ParseResult.succeed(text),
 })
-
-type Parser = {
-  regex: RegExp
-  accessor: (groups: Record<string, string>) => { text: string; duration: number }
-}
