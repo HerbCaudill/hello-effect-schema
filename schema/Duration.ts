@@ -1,6 +1,6 @@
 import { ParseResult, Schema as S } from '@effect/schema'
 
-/** Parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
+/** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
 export class Duration extends S.Class<Duration>('Duration')({
   /** The duration in text form, e.g. `1:45` */
   text: S.String,
@@ -12,7 +12,7 @@ export class Duration extends S.Class<Duration>('Duration')({
 export const DurationFromString = S.transformOrFail(S.String, Duration, {
   strict: true,
   decode: (input, _, ast) => {
-    const formats: Format[] = [
+    const parsers: Parser[] = [
       {
         // 2:45, :55
         regex: /(?:^|\s)(?<text>(?<hrs>\d+)?:(?<mins>\d+))(?:$|\s)/gim,
@@ -41,7 +41,7 @@ export const DurationFromString = S.transformOrFail(S.String, Duration, {
       },
     ]
 
-    const results = formats.flatMap(({ regex, accessor }) => {
+    const results = parsers.flatMap(({ regex, accessor }) => {
       const matches = Array.from(input.matchAll(regex))
       return matches.map(match => accessor(match.groups as Record<string, string>))
     })
@@ -51,13 +51,14 @@ export const DurationFromString = S.transformOrFail(S.String, Duration, {
     if (results.length === 0)
       return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_DURATION'))
 
-    return ParseResult.succeed({ ...results[0], input })
+    const { text, duration } = results[0]
+    return ParseResult.succeed({ text, duration, input })
   },
 
   encode: ({ text }) => ParseResult.succeed(text),
 })
 
-type Format = {
+type Parser = {
   regex: RegExp
   accessor: (groups: Record<string, string>) => { text: string; duration: number }
 }
