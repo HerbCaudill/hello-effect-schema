@@ -51,14 +51,10 @@ describe('Duration', () => {
     testFn(input, () => {
       const result = decode(input)
       if (Either.isLeft(result)) {
-        // @ts-ignore result.left.error.error wtf
-        assert(error, `expected success but got error ${result.left.error.error.message.value}`)
-
-        // @ts-ignore
-        expect(result.left.error.error.message.value).toBe(error) // <- wtf
+        assert(error, `expected success but got error ${result.left}`)
+        expect(result.left.toString()).toContain(error)
       } else {
         assert(!error, `expected error ${error}`)
-
         const parseResult = result.right
         expect(parseResult.text).toEqual(text)
         expect(parseResult.duration).toEqual(duration)
