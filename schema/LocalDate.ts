@@ -11,9 +11,11 @@ export const LocalDateFromString = S.transformOrFail(
       try {
         return ParseResult.succeed(LocalDate.parse(s))
       } catch (e) {
-        return ParseResult.fail(new ParseResult.Type(ast, s, `string could not be parsed as LocalDate`))
+        return ParseResult.fail(
+          new ParseResult.Type(ast, s, `string could not be parsed as LocalDate`),
+        )
       }
     },
     encode: d => ParseResult.succeed(d.toString()),
-  }
+  },
 )

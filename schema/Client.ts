@@ -33,7 +33,7 @@ const lookupClient = (code: string) =>
       return client //
         ? E.succeed(client)
         : E.fail(new Error(`Client with code "${code}" not found`))
-    })
+    }),
   )
 
 /** Schema for a `clientId` encoded as a `code` */
@@ -43,7 +43,7 @@ export const ClientIdFromCode = S.transformOrFail(S.String, ClientId, {
       E.mapBoth({
         onFailure: e => new ParseResult.Type(ast, code, e.message),
         onSuccess: p => p.id,
-      })
+      }),
     )
   },
   encode: (clientId, options, ast) => ParseResult.succeed('TODO'),

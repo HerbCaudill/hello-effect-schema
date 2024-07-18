@@ -1,19 +1,22 @@
 import { ParseResult, Schema as S } from '@effect/schema'
 import { createId } from '@paralleldrive/cuid2'
-import { pipe } from 'effect'
+import { Either, pipe } from 'effect'
 import { Cuid } from './Cuid'
 import { LocalDateFromString } from './LocalDate'
 import { ProjectId } from './Project'
 import { UserId } from './User'
 import { ClientId } from './Client'
+import { DurationFromString } from './Duration'
 
 export const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
 export type TimeEntryId = typeof TimeEntryId.Type
 
 export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   id: S.optional(TimeEntryId, { default: () => createId() as TimeEntryId }),
+  // TODO: we won't know userId and date from the input text, make them optional or create a subtype for parsing?
   userId: UserId,
   date: LocalDateFromString,
+  originalText: S.String,
   duration: S.Number,
   projectId: ProjectId,
   clientId: S.optional(ClientId),
@@ -28,17 +31,30 @@ export type TimeEntryEncoded = typeof TimeEntry.Encoded
 
 export const TimeEntryFromString = S.transformOrFail(S.String, TimeEntry, {
   strict: true,
-  decode: (s, _, ast) => {
-    // bullshit implementation
-    const [userId, date, duration, projectId, clientId, description] = s.split('|')
+  decode: (input, _, ast) => {
+    let description = input
 
-    // real implementation goes here
+    // mock some values just to get start
+    const userId = '1' as UserId
+    const date = '2024-07-15'
+    const projectId: ProjectId = '' as ProjectId
 
     // find a projectId using ProjectFromString (to be written) which will use ProjectIdFromCode
 
     // find a clientId (ditto)
 
     // find a duration using DurationFromString
+    let duration: number = 0
+    const decodeDuration = S.decodeEither(DurationFromString)
+    const parsedDuration = decodeDuration(input)
+    if (Either.isLeft(parsedDuration)) {
+      return ParseResult.fail(
+        new ParseResult.Type(ast, input, parsedDuration.left.error.error.message.value),
+      )
+    } else {
+      duration = parsedDuration.right.duration
+      description = description.replace(parsedDuration.right.text, '')
+    }
 
     // strip out the project tag, the client tag, and the duration text; everything that's left is the description
 
@@ -47,11 +63,13 @@ export const TimeEntryFromString = S.transformOrFail(S.String, TimeEntry, {
     return ParseResult.succeed({
       userId,
       date,
-      duration: Number(duration),
+      originalText: input,
+      duration,
       projectId,
-      clientId: clientId || undefined,
-      description: description || undefined,
+      clientId: undefined,
+      description: description.trim(),
     })
   },
-  encode: (_, options, ast) => ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode a TimeEntry')),
+  encode: (_, options, ast) =>
+    ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode a TimeEntry')),
 })

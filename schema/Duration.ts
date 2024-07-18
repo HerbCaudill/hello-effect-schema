@@ -46,8 +46,10 @@ export const DurationFromString = S.transformOrFail(S.String, Duration, {
       return matches.map(match => accessor(match.groups as Record<string, string>))
     })
 
-    if (results.length > 1) return ParseResult.fail(new ParseResult.Type(ast, input, 'MULTIPLE_DURATIONS'))
-    if (results.length === 0) return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_DURATION'))
+    if (results.length > 1)
+      return ParseResult.fail(new ParseResult.Type(ast, input, 'MULTIPLE_DURATIONS'))
+    if (results.length === 0)
+      return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_DURATION'))
 
     return ParseResult.succeed({ ...results[0], input })
   },

@@ -142,7 +142,7 @@ describe('Schema', () => {
         encode({
           //@ts-expect-error
           foo: 'bar',
-        })
+        }),
       ).toThrow(/"name".*is missing/s)
     })
   })
@@ -208,7 +208,7 @@ describe('Schema', () => {
         encode({
           //@ts-expect-error
           foo: 'bar',
-        })
+        }),
       ).toThrow(/"name".*is missing/s)
     })
   })
@@ -225,11 +225,13 @@ describe('Schema', () => {
             const parsed = LocalDate.parse(s)
             return ParseResult.succeed(parsed)
           } catch (e) {
-            return ParseResult.fail(new ParseResult.Type(ast, s, `string could not be parsed as LocalDate`))
+            return ParseResult.fail(
+              new ParseResult.Type(ast, s, `string could not be parsed as LocalDate`),
+            )
           }
         },
         encode: d => ParseResult.succeed(d.toString()),
-      }
+      },
     )
 
     // Cuid is a branded String
@@ -356,7 +358,7 @@ describe('Schema', () => {
             id: 'pfh0haxfpzowht3oi213cqos',
             userId: 'tz4a98xxat96iws9zmbrgj3a',
             date: 'asdf',
-          })
+          }),
         ).toThrow(/string could not be parsed as LocalDate/i)
       })
 
@@ -367,7 +369,7 @@ describe('Schema', () => {
             userId: 'tz4a98xxat96iws9zmbrgj3a',
             date: '2024-06-10',
           },
-          S.decodeUnknownSync(TimeEntry)
+          S.decodeUnknownSync(TimeEntry),
         )
 
         //@ts-expect-error (TimeEntryId is not assignable to UserId)
@@ -435,7 +437,7 @@ describe('Schema', () => {
               return project //
                 ? E.succeed(project)
                 : E.fail(new Error(`Project with code "${code}" not found`))
-            })
+            }),
           )
 
         /** Schema for a `projectId` encoded as a `code` */
@@ -445,7 +447,7 @@ describe('Schema', () => {
               E.mapBoth({
                 onFailure: e => new ParseResult.Type(ast, code, e.message),
                 onSuccess: p => p.id,
-              })
+              }),
             )
           },
           encode: ParseResult.succeed, // unclear on this - presumably we'd want this to work in the opposite direction as well?
@@ -461,7 +463,7 @@ describe('Schema', () => {
           pipe(
             code,
             S.decodeUnknown(ProjectIdFromCode),
-            E.provideService(Projects, TestProjects)
+            E.provideService(Projects, TestProjects),
             // E.mapError(e => TreeFormatter.formatError(e))
           )
 
