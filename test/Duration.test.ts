@@ -1,10 +1,10 @@
 import { Schema as S } from '@effect/schema'
 import { assert, describe, expect, it, test } from 'vitest'
-import { DurationFromString } from '../schema/Duration'
+import { DurationFromInput } from '../schema/Duration'
 import { Either } from 'effect'
 
 describe('Duration', () => {
-  const decode = S.decodeEither(DurationFromString)
+  const decode = S.decodeEither(DurationFromInput)
 
   const testCases: TestCase[] = [
     // INVALID

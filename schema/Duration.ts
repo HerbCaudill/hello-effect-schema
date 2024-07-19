@@ -9,7 +9,7 @@ export class Duration extends S.Class<Duration>('Duration')({
   duration: S.Number,
 }) {}
 
-export const DurationFromString = S.transformOrFail(S.String, Duration, {
+export const DurationFromInput = S.transformOrFail(S.String, Duration, {
   strict: true,
   decode: (input, _, ast) => {
     const fail = (message: string) => ParseResult.fail(new ParseResult.Type(ast, input, message))
