@@ -24,8 +24,9 @@ export class ParsedTimeEntry extends S.Class<ParsedTimeEntry>('ParsedTimeEntry')
   duration: DurationFromInput,
   project: ProjectFromInput,
   // clientId: S.optional(ClientId),
-  description: S.optional(S.String),
 }) {}
+
+export type ParsedTimeEntryEncoded = typeof ParsedTimeEntry.Encoded
 
 export const ParsedTimeEntryFromInput = S.transformOrFail(TimeEntryInput, ParsedTimeEntry, {
   strict: true,
@@ -36,17 +37,7 @@ export const ParsedTimeEntryFromInput = S.transformOrFail(TimeEntryInput, Parsed
       input,
       duration: input,
       project: input,
-      description: input,
-    }).pipe(
-      x => {
-        if (Either.isRight(x)) {
-          // TODO: strip out the project tag, the client tag, and the duration text; everything that's left is the description
-          x.right.description = 'something'
-        }
-        return x
-      },
-      // , x=>validate(x)
-    )
+    })
   },
   encode: (_, options, ast) =>
     ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode a TimeEntry')),
@@ -71,12 +62,15 @@ export type TimeEntryEncoded = typeof TimeEntry.Encoded
 export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, TimeEntry, {
   strict: true,
   decode: ({ userId, date, input, duration, project }, _, ast) => {
+    const description = input.replace(duration.text, '').trim()
+    // console.log({ description })
     return ParseResult.succeed({
       userId,
       date,
       duration: duration.minutes,
       projectId: project.id,
       clientId: '' as ClientId,
+      description,
     })
   },
   encode: (_, options, ast) =>
