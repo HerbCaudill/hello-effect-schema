@@ -1,7 +1,6 @@
 import { ParseResult, Schema as S } from '@effect/schema'
 import { Context, Effect as E, pipe } from 'effect'
 import { createId, Cuid } from './Cuid'
-import type { Transformation } from '@effect/schema/ParseResult'
 
 export const ProjectId = pipe(Cuid, S.brand('ProjectId'))
 export type ProjectId = typeof ProjectId.Type
@@ -9,12 +8,21 @@ export type ProjectId = typeof ProjectId.Type
 export class Project extends S.Class<Project>('Project')({
   id: S.optional(ProjectId, { default: () => createId() as ProjectId }),
   code: S.String,
+  subCode: S.optional(S.String),
+  description: S.optional(S.String),
+  requiresClient: S.optional(S.Boolean, { default: () => false }),
 }) {}
 
 /** Give this class a list of projects and you can use it to look up projectIds  */
 export class ProjectsProvider {
   constructor(private readonly projects: Project[]) {}
-  getByCode = (code: string) => this.projects.find(p => p.code === code)
+  getByCode = (code: string) =>
+    this.projects.find(p => {
+      if (p.code.toLowerCase() === code.toLowerCase()) return true
+      // TODO: only return a subcode match if the subcode is unique
+      if (p.subCode?.toLowerCase() === code.toLowerCase()) return true
+      return false
+    })
 }
 
 /** This defines the tag for the ProjectsProvider */
@@ -53,7 +61,22 @@ export const ProjectFromInput = S.transformOrFail(S.String, Project, {
   decode: (input, _, ast) =>
     Projects.pipe(
       E.flatMap(projects => {
-        const code = 'out' // TODO find this in the input
+        const projectCodeRegex =
+          /(?:^|\s)(?<text>(?:#)(?<codePrefix>[a-zA-Z0-9\-]+)(\:\s*)(?<subCode>[a-zA-Z0-9\-]+)?|(?:#)(?<codeAlone>[a-zA-Z0-9\-]+))(?:$|\s)/gim
+
+        const matches = Array.from(input.matchAll(projectCodeRegex))
+        const results = matches.map(match => {
+          const { text, subCode = '', codeAlone = '' } = match.groups as Record<string, string>
+          const code = subCode ?? codeAlone
+          return { text, code }
+        })
+
+        if (results.length > 1)
+          return ParseResult.fail(new ParseResult.Type(ast, input, 'MULTIPLE_PROJECTS'))
+        if (results.length === 0)
+          return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_PROJECT'))
+
+        const { code } = results[0]
         const project = projects.getByCode(code)
         return project //
           ? ParseResult.succeed(project)

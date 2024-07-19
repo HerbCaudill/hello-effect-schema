@@ -6,7 +6,7 @@ export class Duration extends S.Class<Duration>('Duration')({
   text: S.String,
 
   /** The duration in minutes, e.g. 75 */
-  duration: S.Number,
+  minutes: S.Number,
 }) {}
 
 export const DurationFromInput = S.transformOrFail(S.String, Duration, {
@@ -25,24 +25,24 @@ export const DurationFromInput = S.transformOrFail(S.String, Duration, {
       /^(?<text>(?<hrsDecimal>\d*\.\d+)(hrs|hr|h)?)$/i,
     ]
 
-    let result: { text: string; duration: number } | undefined
+    let result: { text: string; minutes: number } | undefined
 
     for (const word of input.split(/\s+/)) {
       for (const format of formats) {
         const match = word.match(format)
         if (match) {
           const { text, hrs = '0', mins = '0', hrsDecimal } = match.groups!
-          const duration = hrsDecimal
+          const minutes = hrsDecimal
             ? Math.round(Number(hrsDecimal) * 60) // decimal
             : Number(hrs) * 60 + Number(mins) // hours+minutes
 
           // Make sure we got a valid non-zero number
-          if (duration <= 0 || isNaN(duration)) continue
+          if (minutes <= 0 || isNaN(minutes)) continue
 
           // Can't have more than one result
           if (result) return fail('MULTIPLE_DURATIONS')
 
-          result = { text, duration }
+          result = { text, minutes }
         }
       }
     }

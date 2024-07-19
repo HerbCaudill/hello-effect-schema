@@ -86,7 +86,7 @@ describe('Duration', () => {
       } else {
         assert(!error, `expected error ${error}`)
         const parseResult = result.right
-        expect(parseResult.duration).toEqual(duration)
+        expect(parseResult.minutes).toEqual(duration)
       }
     })
   }
