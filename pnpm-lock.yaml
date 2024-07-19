@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@effect/schema':
-        specifier: ^0.67.22
-        version: 0.67.22(effect@3.3.1)
+        specifier: ^0.68.26
+        version: 0.68.26(effect@3.5.6)
       '@js-joda/core':
         specifier: ^5.6.2
         version: 5.6.2
@@ -18,8 +18,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       effect:
-        specifier: ^3.3.1
-        version: 3.3.1
+        specifier: ^3.5.6
+        version: 3.5.6
       fast-check:
         specifier: ^3.19.0
         version: 3.19.0
@@ -32,10 +32,10 @@ importers:
 
 packages:
 
-  '@effect/schema@0.67.22':
-    resolution: {integrity: sha512-TDPUYnxzQERxNh2JPtn1GeXDVFVpXLRvjaMCJX+AMokaB9u7+ipODcZybV0VmV0FDaTLLFqiXIIe7gWyYqQoVA==}
+  '@effect/schema@0.68.26':
+    resolution: {integrity: sha512-o1O/ZmlHXRe9t548YrQ9sudjRWJqCtsU9KnQHzvZm5pHSc4reuZVQufCXctcR0aETf9OFOYUuETrxjEQehq/Lg==}
     peerDependencies:
-      effect: ^3.3.1
+      effect: ^3.5.6
 
   '@esbuild/aix-ppc64@0.20.2':
     resolution: {integrity: sha512-D+EBOJHXdNZcLJRBkhENNG8Wji2kgc9AZ9KiPr1JuZjsNtyHzrsfLRrY0tk2H2aoFu6RANO1y1iPPUCDYWkb5g==}
@@ -344,8 +344,8 @@ packages:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  effect@3.3.1:
-    resolution: {integrity: sha512-MP6W5NKSEgsQWgTZcLXTPu6sDjCO3Rqi9NFdYUBjlUZ1poCclLgzUerSVVnymE1oYBG1/7Ix82LpBp7EB5Lxmw==}
+  effect@3.5.6:
+    resolution: {integrity: sha512-3PMiC+XMaLkHx9Nlxfr6ot/8/gVq9aEjMlBvyKzJx0p4h1ZyNEjPxvAZQ9tlxAtXBvmfRpmIwHxG99hi8qhEtQ==}
 
   esbuild@0.20.2:
     resolution: {integrity: sha512-WdOOppmUNU+IbZ0PaDiTst80zjnrOkyJNHoKupIcVyU8Lvla3Ugx94VzkQ32Ijqd7UhHJy75gNWDMUekcrSJ6g==}
@@ -361,6 +361,10 @@ packages:
 
   fast-check@3.19.0:
     resolution: {integrity: sha512-CO2JX/8/PT9bDGO1iXa5h5ey1skaKI1dvecERyhH4pp3PGjwd3KIjMAXEg79Ps9nclsdt4oPbfqiAnLU0EwrAQ==}
+    engines: {node: '>=8.0.0'}
+
+  fast-check@3.20.0:
+    resolution: {integrity: sha512-pZIjqLpOZgdSLecec4GKC3Zq5702MZ34upMKxojnNVSWA0K64V3pXOBT1Wdsrc3AphLtzRBbsi8bRWF4TUGmUg==}
     engines: {node: '>=8.0.0'}
 
   fsevents@2.3.3:
@@ -597,10 +601,10 @@ packages:
 
 snapshots:
 
-  '@effect/schema@0.67.22(effect@3.3.1)':
+  '@effect/schema@0.68.26(effect@3.5.6)':
     dependencies:
-      effect: 3.3.1
-      fast-check: 3.19.0
+      effect: 3.5.6
+      fast-check: 3.20.0
 
   '@esbuild/aix-ppc64@0.20.2':
     optional: true
@@ -808,7 +812,7 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
-  effect@3.3.1: {}
+  effect@3.5.6: {}
 
   esbuild@0.20.2:
     optionalDependencies:
@@ -853,6 +857,10 @@ snapshots:
       strip-final-newline: 3.0.0
 
   fast-check@3.19.0:
+    dependencies:
+      pure-rand: 6.1.0
+
+  fast-check@3.20.0:
     dependencies:
       pure-rand: 6.1.0
 
