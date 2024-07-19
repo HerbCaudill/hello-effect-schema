@@ -32,10 +32,10 @@ describe('Schema', () => {
       const result = decode(-1234)
       assert(Either.isLeft(result))
       expect(result.left).toMatchInlineSnapshot(`
-          [ParseError: DateFromString
-          └─ Encoded side transformation failure
-             └─ Expected a string, actual -1234]
-        `)
+        [ParseError: DateFromString
+        └─ Encoded side transformation failure
+           └─ Expected string, actual -1234]
+      `)
     })
   })
 
