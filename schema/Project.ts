@@ -66,7 +66,16 @@ export const ProjectIdFromCode = S.transformOrFail(S.String, ProjectId, {
   encode: ParseResult.succeed,
 })
 
-export const ProjectFromInput = S.transformOrFail(S.String, Project, {
+/** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
+export class ParsedProject extends S.Class<ParsedProject>('ParsedProject')({
+  /** The project in text form, e.g. `#Support: Ongoing` */
+  text: S.String,
+
+  /** The project object */
+  project: Project,
+}) {}
+
+export const ProjectFromInput = S.transformOrFail(S.String, ParsedProject, {
   strict: true,
   decode: (input, _, ast) =>
     Projects.pipe(
@@ -85,10 +94,10 @@ export const ProjectFromInput = S.transformOrFail(S.String, Project, {
         if (results.length === 0)
           return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_PROJECT'))
 
-        const { code } = results[0]
+        const { code, text } = results[0]
         const project = projects.getByCode(code)
         return project //
-          ? ParseResult.succeed(project)
+          ? ParseResult.succeed({ text, project })
           : ParseResult.fail(new ParseResult.Type(ast, input, 'PROJECT_NOT_FOUND'))
       }),
     ),

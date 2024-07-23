@@ -66,7 +66,7 @@ export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, T
       userId,
       date,
       duration: duration.minutes,
-      projectId: project.id!, // TODO
+      projectId: project.project.id!, // TODO
       clientId: '' as ClientId,
       description,
     })

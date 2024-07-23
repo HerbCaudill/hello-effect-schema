@@ -86,14 +86,17 @@ describe('Project', () => {
       {
         input: '#Support: Ongoing',
         projectId: '0005',
+        text: '#Support: Ongoing',
       },
       {
         input: '1h #Ongoing',
         projectId: '0005',
+        text: '#Ongoing',
       },
       {
         input: '8h #out vacation day',
         projectId: '0002',
+        text: '#out',
       },
     ]
 
@@ -105,7 +108,7 @@ describe('Project', () => {
         E.either,
       )
 
-    for (const { input, error, duration, projectId, only, skip } of testCases) {
+    for (const { input, error, projectId, text, only, skip } of testCases) {
       const testFn = only ? test.only : skip ? test.skip : test
 
       testFn(input, () => {
@@ -115,8 +118,9 @@ describe('Project', () => {
             assert(error, `expected success but got error ${e.message}`)
             expect(e.message).toContain(error)
           },
-          onRight: project => {
-            expect(project.id).toEqual(projectId)
+          onRight: parsedProject => {
+            expect(parsedProject.project.id).toEqual(projectId)
+            expect(parsedProject.text).toEqual(text)
           },
         })
       })
@@ -127,10 +131,8 @@ describe('Project', () => {
 type TestCase = {
   input: string
   error?: string
-  duration?: number
   projectId?: string
-  clientId?: string
-  description?: string
+  text?: string
   only?: boolean
   skip?: boolean
 }

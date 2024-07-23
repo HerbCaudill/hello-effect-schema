@@ -7,7 +7,6 @@ import {
   ParsedTimeEntry,
   TimeEntry,
   TimeEntryFromInput,
-  TimeEntryFromParsedTimeEntry,
   type TimeEntryInput,
 } from '../schema/TimeEntry'
 import type { UserId } from '../schema/User'
@@ -18,7 +17,7 @@ import { testProjects } from './testProjects'
 describe('TimeEntry', () => {
   const TestProjects = new ProjectsProvider(testProjects)
 
-  const testCases: TestCase[] = [
+  const testCases = [
     {
       input: '#Support: Ongoing @aba update geography',
       error: 'NO_DURATION',
@@ -30,7 +29,7 @@ describe('TimeEntry', () => {
       projectId: '0005',
       description: 'Ongoing @aba update geography',
     },
-  ]
+  ] as TestCase[]
 
   describe('ParsedTimeEntry from input', () => {
     const decode = (x: TimeEntryInput) =>
@@ -55,7 +54,7 @@ describe('TimeEntry', () => {
             expect(e.message).toContain(error)
           },
           onRight: parsedTimeEntry => {
-            expect(parsedTimeEntry.project.id).toEqual(projectId)
+            expect(parsedTimeEntry.project.project.id).toEqual(projectId)
             expect(parsedTimeEntry.duration.minutes).toEqual(duration)
           },
         })
