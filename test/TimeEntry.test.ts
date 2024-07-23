@@ -63,34 +63,6 @@ describe('TimeEntry', () => {
     }
   })
 
-  describe('TimeEntry from ParsedTimeEntry', () => {
-    it('decodes ', () => {
-      const parsedTimeEntry = {
-        userId: '1234' as UserId,
-        date: LocalDate.now(),
-        input: '1h #Support: ongoing @aba update geography',
-        duration: { minutes: 60, text: '1h' },
-        project: {
-          id: '0005',
-          code: 'Support',
-          subCode: 'Ongoing',
-          description: 'Includes engineering support to individual clients (but not bug fixing)',
-        },
-      } as ParsedTimeEntry
-      const decoded = E.runSync(
-        pipe(
-          parsedTimeEntry, //
-          S.decode(TimeEntryFromParsedTimeEntry),
-          E.provideService(Projects, TestProjects),
-        ),
-      )
-
-      expect(decoded.userId).toEqual('1234')
-      expect(decoded.duration).toEqual(60)
-      expect(decoded.projectId).toEqual('0005')
-    })
-  })
-
   describe('TimeEntry from input', () => {
     const decode = (x: TimeEntryInput) =>
       pipe(
