@@ -81,7 +81,7 @@ export const ProjectFromInput = S.transformOrFail(S.String, ParsedProject, {
     Projects.pipe(
       E.flatMap(projects => {
         const projectCodeRegex =
-          /(?:^|\s)(?<text>(?:#)(?<code>[a-zA-Z0-9\-]+(\:\s*[a-zA-Z0-9\-]+)?))(?:$|\s)/gim
+          /(?<=^|\s)(?<text>(?:#)(?<code>[a-zA-Z0-9\-]+(\:\s*[a-zA-Z0-9\-]+)?))(?=$|\s)/gim
 
         const matches = Array.from(input.matchAll(projectCodeRegex))
         const results = matches.map(match => {

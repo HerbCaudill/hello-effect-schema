@@ -80,7 +80,7 @@ describe('Project', () => {
         error: 'PROJECT_NOT_FOUND',
       },
       {
-        input: '#Out  #Overhead', // double spaces between because single space belongs to first word
+        input: '#Out #Overhead',
         error: 'MULTIPLE_PROJECTS',
       },
       {
