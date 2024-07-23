@@ -383,7 +383,7 @@ describe('Schema', () => {
           id: TimeEntryId,
           userId: UserId,
           date: LocalDateFromString,
-          timestamp: S.optional(S.DateFromNumber, { default: () => new Date() }),
+          timestamp: S.optionalWith(S.DateFromNumber, { default: () => new Date() }),
         })
         type TimeEntry = typeof TimeEntry.Type
 
