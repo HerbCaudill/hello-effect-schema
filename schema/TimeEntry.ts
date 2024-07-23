@@ -44,7 +44,7 @@ export class ParsedTimeEntry //
 
 /** A time entry that decodes from serialized form (e.g. from storage)   */
 export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
-  id: S.optionalWith(TimeEntryId, { default: () => createId() as TimeEntryId }),
+  id: S.optionalWith(TimeEntryId, { exact: true, default: () => createId() as TimeEntryId }),
   userId: UserId,
   date: S.Union(LocalDateSchema, LocalDateFromString), // when coming from persistence, it's a string; when coming from the user, it's a LocalDate
   duration: S.Number,
@@ -52,7 +52,7 @@ export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   clientId: S.optional(ClientId), // S.optional(Client)?
   description: S.optional(S.String),
   input: S.String,
-  timestamp: S.optionalWith(S.DateFromNumber, { default: () => new Date() }),
+  timestamp: S.optionalWith(S.DateFromNumber, { exact: true, default: () => new Date() }),
 }) {}
 
 /** The serialized TimeEntry */
@@ -71,7 +71,7 @@ export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, T
       userId,
       date,
       duration: duration.minutes,
-      projectId: project.project.id!, // TODO: We shouldn't have to insist that the ID is populated
+      projectId: project.project.id,
       clientId: client.client.id,
       input,
       description,
