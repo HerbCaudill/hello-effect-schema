@@ -50,6 +50,7 @@ export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   projectId: ProjectId, // Project?
   clientId: S.optional(ClientId), // S.optional(Client)?
   description: S.optional(S.String),
+  input: S.String,
   timestamp: S.optionalWith(S.DateFromNumber, { default: () => new Date() }),
 }) {}
 
@@ -71,6 +72,7 @@ export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, T
       duration: duration.minutes,
       projectId: project.project.id!, // TODO: We shouldn't have to insist that the ID is populated
       clientId: '' as ClientId,
+      input,
       description,
     })
   },

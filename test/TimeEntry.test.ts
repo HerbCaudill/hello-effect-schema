@@ -54,6 +54,7 @@ describe('TimeEntry', () => {
             expect(e.message).toContain(error)
           },
           onRight: parsedTimeEntry => {
+            expect(parsedTimeEntry.input).toEqual(input)
             expect(parsedTimeEntry.project.project.id).toEqual(projectId)
             expect(parsedTimeEntry.duration.minutes).toEqual(duration)
           },
@@ -83,6 +84,7 @@ describe('TimeEntry', () => {
             expect(e.message).toContain(error)
           },
           onRight: timeEntry => {
+            expect(timeEntry.input).toEqual(input)
             expect(timeEntry.projectId).toEqual(projectId)
             // expect(parsedTimeEntry.clientId).toEqual(clientId)
             expect(timeEntry.duration).toEqual(duration)
@@ -104,6 +106,7 @@ describe('TimeEntry', () => {
         date: '2024-06-10',
         duration: 60,
         projectId: '0001',
+        input: '1h #overhead did stuff',
       }
       const decoded = decode(serialized)
 
@@ -119,6 +122,7 @@ describe('TimeEntry', () => {
         date: '2024-06-10',
         duration: 60,
         projectId: '0001',
+        input: '1h #overhead did stuff',
       })
       const encoded = encode(decoded)
 
