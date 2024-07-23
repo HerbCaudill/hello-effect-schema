@@ -1,7 +1,7 @@
 import { ParseResult, Schema as S } from '@effect/schema'
 import { createId } from '@paralleldrive/cuid2'
 import { Effect as E, pipe } from 'effect'
-import { ClientId } from './Client'
+import { ClientFromInput, ClientId } from './Client'
 import { Cuid } from './Cuid'
 import { DurationFromInput } from './Duration'
 import { LocalDateFromString, LocalDateSchema } from './LocalDate'
@@ -24,7 +24,7 @@ export class ParsedTimeEntry //
     {
       duration: DurationFromInput,
       project: ProjectFromInput,
-      // clientId: S.optional(ClientId),
+      client: ClientFromInput,
     },
     {
       decode: ({ userId, date, input }, _, ast) => {
@@ -34,6 +34,7 @@ export class ParsedTimeEntry //
           input,
           duration: input,
           project: input,
+          client: input,
         })
       },
       encode: (_, options, ast) =>
@@ -60,18 +61,18 @@ export type TimeEntryEncoded = typeof TimeEntry.Encoded
 /** Decodes a ParsedTimeEntry into a TimeEntry */
 export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, TimeEntry, {
   strict: true,
-  decode: ({ userId, date, input, duration, project }) => {
+  decode: ({ userId, date, input, duration, project, client }) => {
     const description = input
       .replace(duration.text, '')
       .replace(project.text, '')
-      // TODO .replace(client.text, '')
+      .replace(client.text, '')
       .trim()
     return ParseResult.succeed({
       userId,
       date,
       duration: duration.minutes,
       projectId: project.project.id!, // TODO: We shouldn't have to insist that the ID is populated
-      clientId: '' as ClientId,
+      clientId: client.client.id,
       input,
       description,
     })

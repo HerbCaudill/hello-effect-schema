@@ -11,10 +11,13 @@ import {
 } from '../schema/TimeEntry'
 import type { UserId } from '../schema/User'
 import { testProjects } from './testProjects'
+import { Clients, ClientsProvider } from '../schema/Client'
+import { testClients } from './testClients'
 
 /** Instantiated ProjectsProvider with our list of projects */
 
 describe('TimeEntry', () => {
+  const TestClients = new ClientsProvider(testClients)
   const TestProjects = new ProjectsProvider(testProjects)
 
   const testCases = [
@@ -24,10 +27,11 @@ describe('TimeEntry', () => {
     },
 
     {
-      input: '1h #Support: Ongoing @aba update geography',
+      input: '1h #Support: Ongoing @ABA update geography',
       duration: 60,
       projectId: '0005',
-      description: '@aba update geography',
+      clientId: '0001',
+      description: 'update geography',
     },
   ] as TestCase[]
 
@@ -36,6 +40,7 @@ describe('TimeEntry', () => {
       pipe(
         x, //
         S.decode(ParsedTimeEntry),
+        E.provideService(Clients, TestClients),
         E.provideService(Projects, TestProjects),
         E.either,
       )
@@ -68,11 +73,21 @@ describe('TimeEntry', () => {
       pipe(
         x, //
         TimeEntryFromInput,
+        E.provideService(Clients, TestClients),
         E.provideService(Projects, TestProjects),
         E.either,
       )
 
-    for (const { input, error, duration, projectId, description, only, skip } of testCases) {
+    for (const {
+      input,
+      error,
+      duration,
+      projectId,
+      clientId,
+      description,
+      only,
+      skip,
+    } of testCases) {
       const testFn = only ? test.only : skip ? test.skip : test
       testFn(input, () => {
         const date = LocalDate.now()
@@ -86,7 +101,7 @@ describe('TimeEntry', () => {
           onRight: timeEntry => {
             expect(timeEntry.input).toEqual(input)
             expect(timeEntry.projectId).toEqual(projectId)
-            // expect(parsedTimeEntry.clientId).toEqual(clientId)
+            expect(timeEntry.clientId).toEqual(clientId)
             expect(timeEntry.duration).toEqual(duration)
             expect(timeEntry.description).toEqual(description)
           },
@@ -106,6 +121,7 @@ describe('TimeEntry', () => {
         date: '2024-06-10',
         duration: 60,
         projectId: '0001',
+        clientId: '0001',
         input: '1h #overhead did stuff',
       }
       const decoded = decode(serialized)
@@ -122,6 +138,7 @@ describe('TimeEntry', () => {
         date: '2024-06-10',
         duration: 60,
         projectId: '0001',
+        clientId: '0001',
         input: '1h #overhead did stuff',
       })
       const encoded = encode(decoded)
