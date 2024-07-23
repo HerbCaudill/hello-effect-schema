@@ -16,13 +16,23 @@ export class Project extends S.Class<Project>('Project')({
 /** Give this class a list of projects and you can use it to look up projectIds  */
 export class ProjectsProvider {
   constructor(private readonly projects: Project[]) {}
-  getByCode = (code: string) =>
-    this.projects.find(p => {
-      if (p.code.toLowerCase() === code.toLowerCase()) return true
-      // TODO: only return a subcode match if the subcode is unique
+  getByCode = (input: string) => {
+    const [code, subCode] = input.split(/:\s*/gi)
+    const results = this.projects.filter(p => {
+      if (
+        p.code.toLowerCase() === code.toLowerCase() &&
+        p.subCode?.toLowerCase() === subCode?.toLowerCase()
+      )
+        return true
       if (p.subCode?.toLowerCase() === code.toLowerCase()) return true
       return false
     })
+    // if we've matched on multiple codes, likely non-unique subCodes that aren't prefixed,
+    // return undefined as if we haven't found a match
+    if (results.length > 1) return undefined
+
+    return results[0]
+  }
 }
 
 /** This defines the tag for the ProjectsProvider */
@@ -38,7 +48,7 @@ const lookupProject = (code: string) =>
       const project = projects.getByCode(code)
       return project //
         ? E.succeed(project)
-        : E.fail(`Project with code "${code}" not found`)
+        : E.fail('PROJECT_NOT_FOUND')
     }),
   )
 
@@ -62,12 +72,11 @@ export const ProjectFromInput = S.transformOrFail(S.String, Project, {
     Projects.pipe(
       E.flatMap(projects => {
         const projectCodeRegex =
-          /(?:^|\s)(?<text>(?:#)(?<codePrefix>[a-zA-Z0-9\-]+)(\:\s*)(?<subCode>[a-zA-Z0-9\-]+)?|(?:#)(?<codeAlone>[a-zA-Z0-9\-]+))(?:$|\s)/gim
+          /(?:^|\s)(?<text>(?:#)(?<code>[a-zA-Z0-9\-]+(\:\s*[a-zA-Z0-9\-]+)?))(?:$|\s)/gim
 
         const matches = Array.from(input.matchAll(projectCodeRegex))
         const results = matches.map(match => {
-          const { text, subCode = '', codeAlone = '' } = match.groups as Record<string, string>
-          const code = subCode ?? codeAlone
+          const { text, code = '' } = match.groups as Record<string, string>
           return { text, code }
         })
 
@@ -80,9 +89,7 @@ export const ProjectFromInput = S.transformOrFail(S.String, Project, {
         const project = projects.getByCode(code)
         return project //
           ? ParseResult.succeed(project)
-          : ParseResult.fail(
-              new ParseResult.Type(ast, input, `Project with code "${code}" not found`),
-            )
+          : ParseResult.fail(new ParseResult.Type(ast, input, 'PROJECT_NOT_FOUND'))
       }),
     ),
   encode: (input, _, ast) =>

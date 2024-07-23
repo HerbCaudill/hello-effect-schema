@@ -49,4 +49,16 @@ export const testProjects = [
     subCode: 'Bug fixin',
     description: "Probably mostly on call. Note feature in comments if it's a major feature fix.",
   },
+  {
+    id: '0009',
+    code: 'Feature',
+    subCode: 'API',
+    description: 'Developing the API functionality.',
+  },
+  {
+    id: '0010',
+    code: 'Support',
+    subCode: 'API',
+    description: 'Help customers with API usage.',
+  },
 ] as Project[]
