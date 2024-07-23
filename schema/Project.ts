@@ -6,11 +6,11 @@ export const ProjectId = pipe(Cuid, S.brand('ProjectId'))
 export type ProjectId = typeof ProjectId.Type
 
 export class Project extends S.Class<Project>('Project')({
-  id: S.optional(ProjectId, { default: () => createId() as ProjectId }),
+  id: S.optionalWith(ProjectId, { default: () => createId() as ProjectId }),
   code: S.String,
   subCode: S.optional(S.String),
   description: S.optional(S.String),
-  requiresClient: S.optional(S.Boolean, { default: () => false }),
+  requiresClient: S.optionalWith(S.Boolean, { default: () => false }),
 }) {}
 
 /** Give this class a list of projects and you can use it to look up projectIds  */

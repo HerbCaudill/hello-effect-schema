@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@effect/schema':
-        specifier: ^0.68.26
-        version: 0.68.26(effect@3.5.6)
+        specifier: ^0.69.0
+        version: 0.69.0(effect@3.5.7)
       '@js-joda/core':
         specifier: ^5.6.2
         version: 5.6.2
@@ -18,8 +18,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       effect:
-        specifier: ^3.5.6
-        version: 3.5.6
+        specifier: ^3.5.7
+        version: 3.5.7
       fast-check:
         specifier: ^3.19.0
         version: 3.19.0
@@ -32,10 +32,10 @@ importers:
 
 packages:
 
-  '@effect/schema@0.68.26':
-    resolution: {integrity: sha512-o1O/ZmlHXRe9t548YrQ9sudjRWJqCtsU9KnQHzvZm5pHSc4reuZVQufCXctcR0aETf9OFOYUuETrxjEQehq/Lg==}
+  '@effect/schema@0.69.0':
+    resolution: {integrity: sha512-dqVnriWqM8TT8d+5vgg1pH4ZOXfs7tQBVAY5N7PALzIOlZamsBKQCdwvMMqremjSkKITckF8/cIj1eQZHQeg7Q==}
     peerDependencies:
-      effect: ^3.5.6
+      effect: ^3.5.7
 
   '@esbuild/aix-ppc64@0.20.2':
     resolution: {integrity: sha512-D+EBOJHXdNZcLJRBkhENNG8Wji2kgc9AZ9KiPr1JuZjsNtyHzrsfLRrY0tk2H2aoFu6RANO1y1iPPUCDYWkb5g==}
@@ -344,8 +344,8 @@ packages:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  effect@3.5.6:
-    resolution: {integrity: sha512-3PMiC+XMaLkHx9Nlxfr6ot/8/gVq9aEjMlBvyKzJx0p4h1ZyNEjPxvAZQ9tlxAtXBvmfRpmIwHxG99hi8qhEtQ==}
+  effect@3.5.7:
+    resolution: {integrity: sha512-PzEncc0R3ZZhqNTR+fXrSX+anF/4Ai6ftKie1ZrUUWY7WPE7d4KjB6wjpeWoGMOC7xWFPGSkBBUudyJN1mx3+g==}
 
   esbuild@0.20.2:
     resolution: {integrity: sha512-WdOOppmUNU+IbZ0PaDiTst80zjnrOkyJNHoKupIcVyU8Lvla3Ugx94VzkQ32Ijqd7UhHJy75gNWDMUekcrSJ6g==}
@@ -601,9 +601,9 @@ packages:
 
 snapshots:
 
-  '@effect/schema@0.68.26(effect@3.5.6)':
+  '@effect/schema@0.69.0(effect@3.5.7)':
     dependencies:
-      effect: 3.5.6
+      effect: 3.5.7
       fast-check: 3.20.0
 
   '@esbuild/aix-ppc64@0.20.2':
@@ -812,7 +812,7 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
-  effect@3.5.6: {}
+  effect@3.5.7: {}
 
   esbuild@0.20.2:
     optionalDependencies:
