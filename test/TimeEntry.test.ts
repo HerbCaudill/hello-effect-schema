@@ -27,7 +27,7 @@ describe('TimeEntry', () => {
       input: '1h #Support: Ongoing @aba update geography',
       duration: 60,
       projectId: '0005',
-      description: 'Ongoing @aba update geography',
+      description: '@aba update geography',
     },
   ] as TestCase[]
 
@@ -86,6 +86,7 @@ describe('TimeEntry', () => {
             expect(timeEntry.projectId).toEqual(projectId)
             // expect(parsedTimeEntry.clientId).toEqual(clientId)
             expect(timeEntry.duration).toEqual(duration)
+            expect(timeEntry.description).toEqual(description)
           },
         })
       })

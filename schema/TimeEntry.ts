@@ -60,13 +60,16 @@ export type TimeEntryEncoded = typeof TimeEntry.Encoded
 export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, TimeEntry, {
   strict: true,
   decode: ({ userId, date, input, duration, project }) => {
-    const description = input.replace(duration.text, '').trim() // TODO
-    // console.log({ description })
+    const description = input
+      .replace(duration.text, '')
+      .replace(project.text, '')
+      // TODO .replace(client.text, '')
+      .trim()
     return ParseResult.succeed({
       userId,
       date,
       duration: duration.minutes,
-      projectId: project.project.id!, // TODO
+      projectId: project.project.id!, // TODO: We shouldn't have to insist that the ID is populated
       clientId: '' as ClientId,
       description,
     })
