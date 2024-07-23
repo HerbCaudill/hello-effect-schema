@@ -43,7 +43,7 @@ describe('Project', () => {
         E.either,
       )
 
-    for (const { input, error, duration, projectId, only, skip } of testCases) {
+    for (const { input, error, projectId, only, skip } of testCases) {
       const testFn = only ? test.only : skip ? test.skip : test
 
       testFn(input, () => {
