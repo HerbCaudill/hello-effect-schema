@@ -7,6 +7,8 @@ import { DurationFromInput } from './Duration'
 import { LocalDateFromString, LocalDateSchema } from './LocalDate'
 import { ProjectFromInput, ProjectId } from './Project'
 import { UserId } from './User'
+import { LocalDate } from '@js-joda/core'
+import type { T } from 'vitest/dist/reporters-yx5ZTtEV'
 
 export const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
 export type TimeEntryId = typeof TimeEntryId.Type
@@ -18,8 +20,11 @@ export class TimeEntryInput extends S.Class<TimeEntryInput>('TimeEntryInput')({
   input: S.String,
 }) {}
 
-/** This is an intermediate representation that isn't useful for anything else.   */
-export class ParsedTimeEntry //
+/**
+ * This is an intermediate representation that isn't useful for anything else. It provides the input
+ * to DurationFromInput etc. so that
+ */
+class ParsedTimeEntry //
   extends TimeEntryInput.transformOrFailFrom<ParsedTimeEntry>('ParsedTimeEntry')(
     {
       duration: DurationFromInput,
@@ -37,8 +42,12 @@ export class ParsedTimeEntry //
           client: input,
         })
       },
-      encode: (_, options, ast) =>
-        ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode')),
+      encode: (decoded, options, ast) =>
+        ParseResult.succeed({
+          userId: decoded.userId,
+          date: decoded.date,
+          input: decoded.input,
+        }),
     },
   ) {}
 
@@ -52,7 +61,10 @@ export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   clientId: S.optional(ClientId), // S.optional(Client)?
   description: S.optional(S.String),
   input: S.String,
-  timestamp: S.optionalWith(S.DateFromNumber, { default: () => new Date(), exact: true }),
+  timestamp: S.optionalWith(S.Union(S.DateFromNumber, S.DateFromSelf), {
+    default: () => new Date(),
+    exact: true,
+  }),
 }) {}
 
 /** The serialized TimeEntry */
@@ -61,12 +73,13 @@ export type TimeEntryEncoded = typeof TimeEntry.Encoded
 /** Decodes a ParsedTimeEntry into a TimeEntry */
 export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, TimeEntry, {
   strict: true,
-  decode: ({ userId, date, input, duration, project, client }) => {
+  decode: ({ userId, date, input, duration, project, client }, _, ast) => {
     const description = input
       .replace(duration.text, '')
       .replace(project.text, '')
       .replace(client.text, '')
       .trim()
+
     return ParseResult.succeed({
       userId,
       date,
@@ -117,21 +130,37 @@ export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, T
 //                         │     └─ Expected number, actual Tue Jul 23 2024 18:12:01 GMT+0200 (Central European Summer Time)
 //                         └─ Expected undefined, actual Tue Jul 23 2024 18:12:01 GMT+0200 (Central European Summer
 
-// export const TimeEntryFromInput = S.transformOrFail(TimeEntryInput, TimeEntry, {
+// this kind of accomplishes that, but feels unidiomatic since the other decoders use TransformOrFail
+// export const TimeEntryFromInput = (timeEntryInput: TimeEntryInput) =>
+//   pipe(
+//     timeEntryInput, //
+//     S.decode(ParsedTimeEntry),
+//     E.flatMap(S.decode(TimeEntryFromParsedTimeEntry)),
+//     // E.either,
+//   )
+
+// export const TimeEntryFromInput1 = S.transformOrFail(TimeEntryInput, TimeEntry, {
 //   strict: true,
-//   decode: (timeEntryInput: TimeEntryInput) =>
-//     pipe(
-//       timeEntryInput, //
-//       S.decode(ParsedTimeEntry),
-//       E.flatMap(S.decode(TimeEntryFromParsedTimeEntry)),
-//     ),
-//   encode: (_, options, ast) => ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode')),
+//   decode: (timeEntryInput: TimeEntryInput, _, ast) => {
+//     // const result = TimeEntryFromInput(timeEntryInput)
+//     // return result
+
+//     return ParseResult.succeed({
+//       userId: '0001',
+//       date: LocalDate.now(),
+//       duration: 1,
+//       projectId: '0001',
+//       clientId: '0001',
+//       input: '',
+//       description: '',
+//     } as TimeEntry)
+//   },
+//   encode: (timeEntry, options, ast) =>
+//     ParseResult.succeed({
+//       userId: timeEntry.userId,
+//       date: timeEntry.date,
+//       input: timeEntry.input,
+//     } as TimeEntryInput),
 // })
 
-// this kind of accomplishes that, but feels unidiomatic since the other decoders use TransformOrFail
-export const TimeEntryFromInput = (timeEntryInput: TimeEntryInput) =>
-  pipe(
-    timeEntryInput, //
-    S.decode(ParsedTimeEntry),
-    E.flatMap(S.decode(TimeEntryFromParsedTimeEntry)),
-  )
+export const TimeEntryFromInput = S.compose(ParsedTimeEntry, TimeEntryFromParsedTimeEntry)
