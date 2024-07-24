@@ -10,12 +10,12 @@ export const DoneEntryId = pipe(Cuid, S.brand('DoneEntryId'))
 export type DoneEntryId = typeof DoneEntryId.Type
 
 export class DoneEntry extends S.Class<DoneEntry>('DoneEntry')({
-  id: S.optionalWith(DoneEntryId, { exact: true, default: () => createId() as DoneEntryId }),
+  id: S.optionalWith(DoneEntryId, { default: () => createId() as DoneEntryId, exact: true }),
   userId: UserId,
   date: LocalDateFromString,
   content: S.String,
-  likes: S.optionalWith(S.Array(UserId), { exact: true, default: () => [] }),
-  timestamp: S.optionalWith(S.DateFromNumber, { exact: true, default: () => new Date() }),
+  likes: S.optionalWith(S.Array(UserId), { default: () => [], exact: true }),
+  timestamp: S.optionalWith(S.DateFromNumber, { default: () => new Date(), exact: true }),
 }) {
   static decode = S.decodeSync(DoneEntry)
   static encode = S.encodeSync(DoneEntry)

@@ -9,7 +9,7 @@ export const ClientId = pipe(Cuid, S.brand('ClientId'))
 export type ClientId = typeof ClientId.Type
 
 export class Client extends S.Class<Client>('Client')({
-  id: S.optionalWith(ClientId, { exact: true, default: () => createId() as ClientId }),
+  id: S.optionalWith(ClientId, { default: () => createId() as ClientId, exact: true }),
   code: S.String,
 }) {}
 
