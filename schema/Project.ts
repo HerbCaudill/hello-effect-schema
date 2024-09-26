@@ -13,9 +13,19 @@ export class Project extends S.Class<Project>('Project')({
   requiresClient: S.optionalWith(S.Boolean, { default: () => false, exact: true }),
 }) {}
 
-/** Give this class a list of projects and you can use it to look up projectIds  */
+/** Give this class a list of projects and you can use it to look projects by ID or by code  */
 export class ProjectsProvider {
-  constructor(private readonly projects: Project[]) {}
+  private index: Record<ProjectId, Project> = {}
+
+  constructor(private readonly projects: Project[]) {
+    this.index = projects.reduce<Record<ProjectId, Project>>(
+      (result, project) => ({ ...result, [project.id]: project }),
+      {},
+    )
+  }
+
+  getById = (id: ProjectId) => this.index[id]
+
   getByCode = (input: string) => {
     const [code, subCode] = input.split(/:\s*/gi)
     const results = this.projects.filter(p => {
@@ -27,7 +37,7 @@ export class ProjectsProvider {
       if (p.subCode?.toLowerCase() === code.toLowerCase()) return true
       return false
     })
-    // if we've matched on multiple codes, likely non-unique subCodes that aren't prefixed,
+    // if we've matched on multiple codes (likely non-unique subCodes that aren't prefixed)
     // return undefined as if we haven't found a match
     if (results.length > 1) return undefined
 
@@ -35,38 +45,43 @@ export class ProjectsProvider {
   }
 }
 
-/** This defines the tag for the ProjectsProvider */
 export class Projects extends Context.Tag('Projects')<Projects, ProjectsProvider>() {}
-
-/**
- * Takes a code, gets access to the injected dependency, and uses that to return an
- * effect containing either the corresponding `projectId` or an error
- * */
-const lookupProject = (code: string) =>
-  Projects.pipe(
-    E.flatMap(projects => {
-      const project = projects.getByCode(code)
-      return project //
-        ? E.succeed(project)
-        : E.fail('PROJECT_NOT_FOUND')
-    }),
-  )
 
 /** Schema for a `projectId` encoded as a `code` */
 export const ProjectIdFromCode = S.transformOrFail(S.String, ProjectId, {
   strict: true,
-  decode: (code, _, ast) => {
-    return lookupProject(code).pipe(
-      E.mapBoth({
-        onFailure: e => new ParseResult.Type(ast, code, e),
-        onSuccess: p => p.id,
-      }),
-    )
-  },
-  encode: ParseResult.succeed,
+  decode: (code, _, ast) =>
+    E.gen(function* () {
+      const projects = yield* Projects
+      const project = projects.getByCode(code)
+      return yield* project //
+        ? E.succeed(project.id)
+        : E.fail(new ParseResult.Type(ast, code, 'PROJECT_NOT_FOUND'))
+    }),
+  encode: (id, _, ast) =>
+    E.gen(function* () {
+      const projects = yield* Projects
+      const project = projects.getByCode(id)
+      return yield* project //
+        ? E.succeed(project.code)
+        : E.fail(new ParseResult.Type(ast, id, 'PROJECT_NOT_FOUND'))
+    }),
 })
 
-/** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
+/** Schema for a `Project` encoded as a `projectId` */
+export const ProjectFromId = S.transformOrFail(ProjectId, Project, {
+  strict: true,
+  decode: (id, _, ast) =>
+    E.gen(function* () {
+      const projects = yield* Projects
+      const project = projects.getById(id)
+      return yield* project //
+        ? E.succeed(project)
+        : E.fail(new ParseResult.Type(ast, id, 'PROJECT_NOT_FOUND'))
+    }),
+  encode: project => ParseResult.succeed(project.id as ProjectId),
+})
+
 export class ParsedProject extends S.Class<ParsedProject>('ParsedProject')({
   /** The project in text form, e.g. `#Support: Ongoing` */
   text: S.String,
@@ -75,6 +90,7 @@ export class ParsedProject extends S.Class<ParsedProject>('ParsedProject')({
   project: Project,
 }) {}
 
+/** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
 export const ProjectFromInput = S.transformOrFail(S.String, ParsedProject, {
   strict: true,
   decode: (input, _, ast) =>
@@ -101,6 +117,5 @@ export const ProjectFromInput = S.transformOrFail(S.String, ParsedProject, {
           : ParseResult.fail(new ParseResult.Type(ast, input, 'PROJECT_NOT_FOUND'))
       }),
     ),
-  encode: (input, _, ast) =>
-    ParseResult.fail(new ParseResult.Type(ast, input, 'cannot encode a Project')),
+  encode: (input, _, ast) => ParseResult.fail(new ParseResult.Type(ast, input, 'cannot encode')),
 })

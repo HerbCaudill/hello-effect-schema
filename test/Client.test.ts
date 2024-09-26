@@ -1,44 +1,32 @@
 import { Schema as S } from '@effect/schema'
 import { Effect as E, Either, pipe } from 'effect'
-import { assert, describe, expect, it, test } from 'vitest'
+import { assert, describe, expect, it, test as _test } from 'vitest'
 import { ClientFromInput, ClientIdFromCode, Clients, ClientsProvider } from '../schema/Client'
 import { testClients } from './testClients'
 
-const TestClients = new ClientsProvider(testClients)
-
 describe('Client', () => {
+  const TestClients = new ClientsProvider(testClients)
+
   describe('ClientIdFromCode', () => {
     const testCases: TestCase[] = [
-      {
-        input: '',
-        error: 'CLIENT_NOT_FOUND',
-      },
-      {
-        input: 'wow',
-        error: 'CLIENT_NOT_FOUND',
-      },
-      {
-        input: 'aba',
-        clientId: '0001',
-      },
-      {
-        input: 'chemonics',
-        clientId: '0002',
-      },
+      { input: '', error: 'CLIENT_NOT_FOUND' },
+      { input: 'asdfasdf', error: 'CLIENT_NOT_FOUND' },
+      { input: 'aba', clientId: '0001' },
+      { input: 'chemonics', clientId: '0002' },
     ]
 
-    const decode = (x: string) =>
+    const decode = (code: string) =>
       pipe(
-        x, //
+        code, //
         S.decode(ClientIdFromCode),
         E.provideService(Clients, TestClients),
         E.either,
       )
 
     for (const { input, error, clientId, only, skip } of testCases) {
-      const testFn = only ? test.only : skip ? test.skip : test
+      const test = only ? _test.only : skip ? _test.skip : _test
 
-      testFn(input, () => {
+      test(input, () => {
         const result = E.runSync(decode(input))
         Either.match(result, {
           onLeft: e => {
@@ -55,46 +43,26 @@ describe('Client', () => {
 
   describe('ClientFromInput', () => {
     const testCases: TestCase[] = [
-      {
-        input: '',
-        error: 'NO_CLIENT',
-      },
-      {
-        input: 'aba',
-        error: 'NO_CLIENT',
-      },
-      {
-        input: '@wow',
-        error: 'CLIENT_NOT_FOUND',
-      },
-      {
-        input: '@aba @chemonics',
-        error: 'MULTIPLE_CLIENTS',
-      },
-      {
-        input: '1h #Support: ongoing @aba',
-        clientId: '0001',
-        text: '@aba',
-      },
-      {
-        input: '1h #Ongoing @chemonics',
-        clientId: '0002',
-        text: '@chemonics',
-      },
+      { input: '', error: 'NO_CLIENT' },
+      { input: 'aba', error: 'NO_CLIENT' },
+      { input: '@asdfasdf', error: 'CLIENT_NOT_FOUND' },
+      { input: '@aba @chemonics', error: 'MULTIPLE_CLIENTS' },
+      { input: '1h #Support: ongoing @aba', clientId: '0001', text: '@aba' },
+      { input: '1h #Ongoing @chemonics', clientId: '0002', text: '@chemonics' },
     ]
 
-    const decode = (x: string) =>
+    const decode = (input: string) =>
       pipe(
-        x, //
+        input, //
         S.decode(ClientFromInput),
         E.provideService(Clients, TestClients),
         E.either,
       )
 
     for (const { input, error, clientId, text, only, skip } of testCases) {
-      const testFn = only ? test.only : skip ? test.skip : test
+      const test = only ? _test.only : skip ? _test.skip : _test
 
-      testFn(input, () => {
+      test(input, () => {
         const result = E.runSync(decode(input))
         Either.match(result, {
           onLeft: e => {

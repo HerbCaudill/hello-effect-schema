@@ -15,38 +15,63 @@ export class Client extends S.Class<Client>('Client')({
 
 /** Give this class a list of clients and you can use it to look up clientIds  */
 export class ClientsProvider {
-  constructor(private readonly clients: Client[]) {}
-  getByCode = (code: string) => this.clients.find(p => p.code.toLowerCase() === code.toLowerCase())
+  private index: Record<ClientId, Client> = {}
+
+  constructor(private readonly clients: Client[]) {
+    this.index = clients.reduce<Record<ClientId, Client>>(
+      (result, client) => ({ ...result, [client.id]: client }),
+      {},
+    )
+  }
+
+  getById = (id: ClientId) => this.index[id]
+
+  getByCode = (input: string) => {
+    const [code, subCode] = input.split(/:\s*/gi)
+    const results = this.clients.filter(p => {
+      if (p.code.toLowerCase() === code.toLowerCase()) return true
+      return false
+    })
+    return results[0]
+  }
 }
 
 /** This defines the tag for the ClientsProvider */
 export class Clients extends Context.Tag('Clients')<Clients, ClientsProvider>() {}
 
-/**
- * Takes a code, gets access to the injected dependency, and uses that to return an
- * effect containing either the corresponding `clientId` or an error
- * */
-const lookupClient = (code: string) =>
-  Clients.pipe(
-    E.flatMap(clients => {
-      const client = clients.getByCode(code)
-      return client //
-        ? E.succeed(client)
-        : E.fail(new Error('CLIENT_NOT_FOUND'))
-    }),
-  )
-
 /** Schema for a `clientId` encoded as a `code` */
 export const ClientIdFromCode = S.transformOrFail(S.String, ClientId, {
-  decode: (code, _, ast) => {
-    return lookupClient(code).pipe(
-      E.mapBoth({
-        onFailure: e => new ParseResult.Type(ast, code, e.message),
-        onSuccess: p => p.id,
-      }),
-    )
-  },
-  encode: ParseResult.succeed,
+  strict: true,
+  decode: (code, _, ast) =>
+    E.gen(function* () {
+      const clients = yield* Clients
+      const client = clients.getByCode(code)
+      return yield* client //
+        ? E.succeed(client.id)
+        : E.fail(new ParseResult.Type(ast, code, 'CLIENT_NOT_FOUND'))
+    }),
+  encode: (id, _, ast) =>
+    E.gen(function* () {
+      const clients = yield* Clients
+      const client = clients.getByCode(id)
+      return yield* client //
+        ? E.succeed(client.code)
+        : E.fail(new ParseResult.Type(ast, id, 'CLIENT_NOT_FOUND'))
+    }),
+})
+
+/** Schema for a `Client` encoded as a `clientId` */
+export const ClientFromId = S.transformOrFail(ClientId, Client, {
+  strict: true,
+  decode: (id, _, ast) =>
+    E.gen(function* () {
+      const clients = yield* Clients
+      const client = clients.getById(id)
+      return yield* client //
+        ? E.succeed(client)
+        : E.fail(new ParseResult.Type(ast, id, 'CLIENT_NOT_FOUND'))
+    }),
+  encode: client => ParseResult.succeed(client.id as ClientId),
 })
 
 /** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
