@@ -3,6 +3,8 @@ import { LocalDate } from '@js-joda/core'
 import { Effect as E } from 'effect'
 import { expect, test } from 'vitest'
 import { LocalDateFromString, LocalDateSchema } from '../schema/LocalDate'
+import { UserId } from '../schema/User'
+import { TimeEntryId } from '../schema/TimeEntry.old'
 
 // In the hours app, unstructured text input into a calendar gets parsed into time entries. For
 // example, if I enter `#overhead 1hr staff meeting` on a given day, the object we start with might
@@ -90,16 +92,8 @@ const DurationFromInput = S.transformOrFail(S.String, S.Number, {
   },
 
   encode: (duration, _, ast) =>
-    ParseResult.fail(new ParseResult.Forbidden(ast, duration, 'DurationFromInput is read-only')),
+    ParseResult.fail(new ParseResult.Forbidden(ast, duration, `Can't recover the original input`)),
 })
-
-// And the schema for the input object would be:
-
-class TimeEntryInput extends S.Class<TimeEntryInput>('TimeEntryInput')({
-  userId: S.String,
-  date: LocalDateSchema,
-  input: S.String,
-}) {}
 
 // This works as expected:
 
@@ -109,12 +103,20 @@ test('DurationFromInput ', () => {
   expect(decoded).toBe(60)
 })
 
+// The input schema combines the text input with the calendar date selected and the current user's ID:
+
+class TimeEntryInput extends S.Class<TimeEntryInput>('TimeEntryInput')({
+  userId: UserId,
+  date: LocalDateSchema,
+  input: S.String,
+}) {}
+
 // Now, a TimeEntry can come from two sources: it can be deserialized from storage...
 
 class DeserializedTimeEntry extends S.Class<DeserializedTimeEntry>('DeserializedTimeEntry')({
-  id: S.String,
-  userId: S.String,
-  date: LocalDateFromString,
+  id: TimeEntryId,
+  userId: UserId,
+  date: LocalDateFromString, // the date is stored as a string
   input: S.String,
   duration: S.Number,
 }) {}
@@ -122,19 +124,17 @@ class DeserializedTimeEntry extends S.Class<DeserializedTimeEntry>('Deserialized
 // ...or it can be parsed from user input:
 
 class ParsedTimeEntry extends S.Class<ParsedTimeEntry>('ParsedTimeEntry')({
-  id: S.optionalWith(S.String, {
-    default: () => 'abc', // imagine a guid
-    exact: true,
-  }),
-  userId: S.String,
-  date: LocalDateSchema,
+  id: S.optionalWith(TimeEntryId, { default: () => 'abc' as TimeEntryId, exact: true }), // ID is generated if not present
+  userId: UserId,
+  date: LocalDateSchema, // we're given the date as an object
   input: S.String,
-  duration: DurationFromInput,
+  duration: DurationFromInput, // we'll parse the duration from the input
 }) {}
 
 // The TimeEntry schema we'll use is a union of those two:
 
 const TimeEntry = S.Union(DeserializedTimeEntry, ParsedTimeEntry)
+type TimeEntry = typeof TimeEntry.Type
 
 // Now we can transform a TimeEntryInput into a TimeEntry:
 
@@ -144,16 +144,12 @@ const TimeEntryFromInput = S.transformOrFail(TimeEntryInput, TimeEntry, {
     return ParseResult.succeed({
       userId,
       date,
-      input,
+      input, // we keep the input around for reference
       duration: input, // we pass the input to duration, which will be parsed
     })
   },
-  encode: ({ userId, date, input }) =>
-    ParseResult.succeed({
-      userId,
-      date: typeof date === 'string' ? LocalDate.parse(date) : date,
-      input,
-    }),
+  encode: (duration, _, ast) =>
+    ParseResult.fail(new ParseResult.Forbidden(ast, duration, `Can't recover the original input`)),
 })
 
 // we can use this transformation to convert the input to a TimeEntry and vice versa:
@@ -168,11 +164,6 @@ test('TimeEntryFromInput', () => {
     input: `#overhead 1hr staff meeting`,
     duration: 60,
   })
-
-  // when we encode we get back the original input:
-  const encode = S.encode(TimeEntryFromInput)
-  const encoded = E.runSync(encode(decoded))
-  expect(encoded).toEqual(timeEntryInput)
 })
 
 // We can also encode a TimeEntry to get the persistence format:
@@ -185,7 +176,7 @@ test('encoded TimeEntry', () => {
     date: LocalDate.parse('2024-10-10'), // <- LocalDate object
     input: `#overhead 1hr staff meeting`,
     duration: 60,
-  }
+  } as TimeEntry
 
   const encoded = E.runSync(encode(timeEntry))
   expect(encoded.date).toEqual('2024-10-10')
