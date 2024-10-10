@@ -1,79 +1,68 @@
 import { ParseResult, Schema as S } from '@effect/schema'
-import { createId } from '@paralleldrive/cuid2'
-import { Effect as E, pipe } from 'effect'
-import { ClientFromInput, ClientId } from './Client'
-import { Cuid } from './Cuid'
-import { DurationFromInput } from './Duration'
 import { LocalDateFromString, LocalDateSchema } from './LocalDate'
-import { ProjectFromInput, ProjectId } from './Project'
+import { Project, ProjectFromInput } from './Project'
 import { UserId } from './User'
-import { LocalDate } from '@js-joda/core'
-import type { T } from 'vitest/dist/reporters-yx5ZTtEV'
+import { DurationFromInput } from './Duration'
+import { pipe } from 'effect'
+import { createId, Cuid } from './Cuid'
+import { Client, ClientFromInput } from './Client'
 
 export const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
 export type TimeEntryId = typeof TimeEntryId.Type
 
-/** The data we have at the moment a user inputs a new time entry */
 export class TimeEntryInput extends S.Class<TimeEntryInput>('TimeEntryInput')({
   userId: UserId,
   date: LocalDateSchema,
   input: S.String,
 }) {}
 
-/**
- * This is an intermediate representation that isn't useful for anything else. It provides the input
- * to DurationFromInput etc. so that
- */
-class ParsedTimeEntry //
-  extends TimeEntryInput.transformOrFailFrom<ParsedTimeEntry>('ParsedTimeEntry')(
-    {
-      duration: DurationFromInput,
-      project: ProjectFromInput,
-      client: ClientFromInput,
-    },
-    {
-      decode: ({ userId, date, input }, _, ast) => {
-        return ParseResult.succeed({
-          userId,
-          date,
-          input,
-          duration: input,
-          project: input,
-          client: input,
-        })
-      },
-      encode: (decoded, options, ast) =>
-        ParseResult.succeed({
-          userId: decoded.userId,
-          date: decoded.date,
-          input: decoded.input,
-        }),
-    },
-  ) {}
+export class ParsedTimeEntry extends S.Class<ParsedTimeEntry>('ParsedTimeEntry')({
+  userId: UserId,
+  date: LocalDateSchema,
+  input: S.String,
+  duration: DurationFromInput,
+  project: ProjectFromInput,
+  client: ClientFromInput,
+  timestamp: S.optionalWith(S.Date, { default: () => new Date(), exact: true }),
+}) {}
 
-/** A time entry that decodes from serialized form (e.g. from storage)   */
+export const ParsedTimeEntryFromInput = S.transformOrFail(TimeEntryInput, ParsedTimeEntry, {
+  strict: true,
+  decode: ({ userId, date, input }) => {
+    return ParseResult.succeed({
+      userId,
+      date,
+      input,
+      duration: input,
+      project: input,
+      client: input,
+    })
+  },
+  encode: decoded =>
+    ParseResult.succeed({
+      userId: decoded.userId as UserId,
+      date: decoded.date,
+      input: decoded.input,
+    }),
+})
+
+/** A time entry that decodes from serialized form (e.g. from storage) */
 export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   id: S.optionalWith(TimeEntryId, { default: () => createId() as TimeEntryId, exact: true }),
   userId: UserId,
-  date: S.Union(LocalDateSchema, LocalDateFromString), // when coming from persistence, it's a string; when coming from the user, it's a LocalDate
+  date: LocalDateSchema,
   duration: S.Number,
-  projectId: ProjectId, // Project?
-  clientId: S.optional(ClientId), // S.optional(Client)?
+  project: Project,
+  client: Client,
   description: S.optional(S.String),
   input: S.String,
-  timestamp: S.optionalWith(S.Union(S.DateFromNumber, S.DateFromSelf), {
-    default: () => new Date(),
-    exact: true,
-  }),
+  timestamp: S.DateFromSelf,
 }) {}
-
-/** The serialized TimeEntry */
-export type TimeEntryEncoded = typeof TimeEntry.Encoded
 
 /** Decodes a ParsedTimeEntry into a TimeEntry */
 export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, TimeEntry, {
   strict: true,
-  decode: ({ userId, date, input, duration, project, client }, _, ast) => {
+  decode: ({ userId, date, input, duration, project, client, timestamp }, _, ast) => {
     const description = input
       .replace(duration.text, '')
       .replace(project.text, '')
@@ -84,83 +73,23 @@ export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, T
       userId,
       date,
       duration: duration.minutes,
-      projectId: project.project.id,
-      clientId: client.client.id,
+      project: project.project,
+      client: client.client,
       input,
       description,
+      timestamp,
     })
   },
-  encode: (_, options, ast) => ParseResult.fail(new ParseResult.Forbidden(ast, 'cannot encode')),
+  encode: decoded =>
+    ParseResult.succeed({
+      userId: decoded.userId as UserId,
+      date: decoded.date,
+      input: decoded.input,
+      duration: { text: `${decoded.duration}min`, minutes: decoded.duration },
+      project: { text: decoded.project.code, project: decoded.project as Project },
+      client: { text: decoded.client.code, client: decoded.client as Client },
+      timestamp: decoded.timestamp,
+    }),
 })
 
-// I'd like to have a single decoder that goes from TimeEntryInput to TimeEntry, but can't get it to work.
-
-// something I don't understand going on with the timestamp.
-
-// Typescript says:
-// Type '(timeEntryInput: TimeEntryInput) => E.Effect<TimeEntry, ParseResult.ParseError, Projects>' is not assignable to type '((fromA: TimeEntryInput, options: ParseOptions, ast: Transformation, fromI: { readonly userId: string; readonly date: LocalDate; readonly input: string; }) => Effect<...>) | ((fromA: TimeEntryInput, options: ParseOptions, ast: Transformation, fromI: { ...; }) => Effect<...>)'.
-//   Type '(timeEntryInput: TimeEntryInput) => E.Effect<TimeEntry, ParseResult.ParseError, Projects>' is not assignable to type '(fromA: TimeEntryInput, options: ParseOptions, ast: Transformation, fromI: { readonly userId: string; readonly date: LocalDate; readonly input: string; }) => Effect<...>'.
-//     Type 'Effect<TimeEntry, ParseError, Projects>' is not assignable to type 'Effect<{ readonly userId: string; readonly date: string | LocalDate; readonly duration: number; readonly projectId: string; readonly id?: string | undefined; readonly description?: string | undefined; readonly clientId?: string | undefined; readonly timestamp?: number | undefined; }, ParseIssue, Projects>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
-//       Type 'TimeEntry' is not assignable to type '{ readonly userId: string; readonly date: string | LocalDate; readonly duration: number; readonly projectId: string; readonly id?: string | undefined; readonly description?: string | undefined; readonly clientId?: string | undefined; readonly timestamp?: number | undefined; }'.
-//         Types of property 'timestamp' are incompatible.
-//           Type 'Date' is not assignable to type 'number'.ts(2322)
-
-// Tested with:
-// ```ts
-// const decode = (x: TimeEntryInput) =>
-//   pipe(
-//     x, //
-//     S.decode(TimeEntryFromInput),
-//     E.provideService(Projects, TestProjects),
-//     E.either,
-//   )
-// ```
-// // but failed with:
-// AssertionError: expected success but got error ((TimeEntryInput (Encoded side) <-> TimeEntryInput) <-> (TimeEntry (Encoded side) <-> TimeEntry))
-// └─ Type side transformation failure
-//    └─ (TimeEntry (Encoded side) <-> TimeEntry)
-//       └─ Encoded side transformation failure
-//          └─ TimeEntry (Encoded side)
-//             └─ Encoded side transformation failure
-//                └─ Struct (Encoded side)
-//                   └─ ["timestamp"]
-//                      └─ DateFromNumber | undefined
-//                         ├─ DateFromNumber
-//                         │  └─ Encoded side transformation failure
-//                         │     └─ Expected number, actual Tue Jul 23 2024 18:12:01 GMT+0200 (Central European Summer Time)
-//                         └─ Expected undefined, actual Tue Jul 23 2024 18:12:01 GMT+0200 (Central European Summer
-
-// this kind of accomplishes that, but feels unidiomatic since the other decoders use TransformOrFail
-// export const TimeEntryFromInput = (timeEntryInput: TimeEntryInput) =>
-//   pipe(
-//     timeEntryInput, //
-//     S.decode(ParsedTimeEntry),
-//     E.flatMap(S.decode(TimeEntryFromParsedTimeEntry)),
-//     // E.either,
-//   )
-
-// export const TimeEntryFromInput1 = S.transformOrFail(TimeEntryInput, TimeEntry, {
-//   strict: true,
-//   decode: (timeEntryInput: TimeEntryInput, _, ast) => {
-//     // const result = TimeEntryFromInput(timeEntryInput)
-//     // return result
-
-//     return ParseResult.succeed({
-//       userId: '0001',
-//       date: LocalDate.now(),
-//       duration: 1,
-//       projectId: '0001',
-//       clientId: '0001',
-//       input: '',
-//       description: '',
-//     } as TimeEntry)
-//   },
-//   encode: (timeEntry, options, ast) =>
-//     ParseResult.succeed({
-//       userId: timeEntry.userId,
-//       date: timeEntry.date,
-//       input: timeEntry.input,
-//     } as TimeEntryInput),
-// })
-
-export const TimeEntryFromInput = S.compose(ParsedTimeEntry, TimeEntryFromParsedTimeEntry)
+export const TimeEntryFromInput = S.compose(ParsedTimeEntryFromInput, TimeEntryFromParsedTimeEntry)
