@@ -1,6 +1,6 @@
 import { ParseResult, Schema as S } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
-import { Either } from 'effect'
+import { Effect as E } from 'effect'
 import { assert, expect, test } from 'vitest'
 import { LocalDateFromString, LocalDateSchema } from '../schema/LocalDate'
 
@@ -93,17 +93,6 @@ const DurationFromInput = S.transformOrFail(S.String, S.Number, {
     ParseResult.fail(new ParseResult.Forbidden(ast, duration, 'DurationFromInput is read-only')),
 })
 
-class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
-  id: S.optionalWith(S.String, {
-    default: () => 'abc', // imagine a guid
-    exact: true,
-  }),
-  userId: S.String,
-  date: S.Union(LocalDateFromString, LocalDateSchema),
-  input: S.String,
-  duration: S.Union(DurationFromInput, S.Number),
-}) {}
-
 // And the schema for the input object would be:
 
 class TimeEntryInput extends S.Class<TimeEntryInput>('TimeEntryInput')({
@@ -115,12 +104,34 @@ class TimeEntryInput extends S.Class<TimeEntryInput>('TimeEntryInput')({
 // This works as expected:
 
 test('DurationFromInput ', () => {
-  const decode = S.decodeEither(DurationFromInput)
-  const result = decode(`#overhead 1hr staff meeting`)
-  assert(Either.isRight(result))
-  const decoded = result.right
+  const decode = S.decode(DurationFromInput)
+  const decoded = E.runSync(decode(`#overhead 1hr staff meeting`))
   expect(decoded).toBe(60)
 })
+
+// Now, a TimeEntry can come from two sources: it can be deserialized from storage, or it can be
+// parsed from user input
+
+class DeserializedTimeEntry extends S.Class<DeserializedTimeEntry>('DeserializedTimeEntry')({
+  id: S.String,
+  userId: S.String,
+  date: LocalDateFromString,
+  input: S.String,
+  duration: S.Number,
+}) {}
+
+class ParsedTimeEntry extends S.Class<ParsedTimeEntry>('ParsedTimeEntry')({
+  id: S.optionalWith(S.String, {
+    default: () => 'abc', // imagine a guid
+    exact: true,
+  }),
+  userId: S.String,
+  date: LocalDateSchema,
+  input: S.String,
+  duration: DurationFromInput,
+}) {}
+
+const TimeEntry = S.Union(DeserializedTimeEntry, ParsedTimeEntry)
 
 // Now we can transform a TimeEntryInput into a TimeEntry:
 const TimeEntryFromInput = S.transformOrFail(TimeEntryInput, TimeEntry, {
@@ -144,10 +155,9 @@ const TimeEntryFromInput = S.transformOrFail(TimeEntryInput, TimeEntry, {
 // This successfully converts a TimeEntryInput to a TimeEntry:
 
 test('TimeEntryFromInput', () => {
-  const decode = S.decodeEither(TimeEntryFromInput)
-  const decodeResult = decode(timeEntryInput)
-  assert(Either.isRight(decodeResult))
-  const decoded = decodeResult.right
+  // we can use this transformation to decode
+  const decode = S.decode(TimeEntryFromInput)
+  const decoded = E.runSync(decode(timeEntryInput))
   expect(decoded).toEqual({
     id: 'abc',
     userId: '123',
@@ -155,32 +165,26 @@ test('TimeEntryFromInput', () => {
     input: `#overhead 1hr staff meeting`,
     duration: 60,
   })
-  expect(decoded.userId).toBe('123')
-  expect(decoded.duration).toBe(60)
 
-  // when we encode, we get back the original input:
-
-  const encode = S.encodeEither(TimeEntryFromInput)
-  const encodeResult = encode(decoded)
-  assert(Either.isRight(encodeResult))
-  const encoded = encodeResult.right
-
+  // and we can use it to encode, in which case we get back the original input:
+  const encode = S.encode(TimeEntryFromInput)
+  const encoded = E.runSync(encode(decoded))
   expect(encoded).toEqual(timeEntryInput)
 })
 
-// We can also take a TimeEntry and encode it to get the persistence format:
+// We can also encode a TimeEntry to get the persistence format:
 
 test('encoded TimeEntry', () => {
-  const encode = S.encodeEither(TimeEntry)
-  const encodeResult = encode({
-    id: 'abc',
-    userId: '123',
-    date: LocalDate.parse('2024-10-10'), // <- LocalDate object
-    input: `#overhead 1hr staff meeting`,
-    duration: 60,
-  })
-  assert(Either.isRight(encodeResult))
-  const encoded = encodeResult.right
+  const encode = S.encode(TimeEntry)
+  const encoded = E.runSync(
+    encode({
+      id: 'abc',
+      userId: '123',
+      date: LocalDate.parse('2024-10-10'), // <- LocalDate object
+      input: `#overhead 1hr staff meeting`,
+      duration: 60,
+    }),
+  )
   expect(encoded.date).toEqual('2024-10-10')
   expect(encoded.duration).toEqual(60)
   expect(encoded).toEqual({
@@ -196,15 +200,15 @@ test('encoded TimeEntry', () => {
 
 test('decoded TimeEntry', () => {
   const decode = S.decodeEither(TimeEntry)
-  const decodeResult = decode({
-    id: 'abc',
-    userId: '123',
-    date: '2024-10-10', // <- encoded as a string
-    input: `#overhead 1hr staff meeting`,
-    duration: 60,
-  })
-  assert(Either.isRight(decodeResult))
-  const decoded = decodeResult.right
+  const decoded = E.runSync(
+    decode({
+      id: 'abc',
+      userId: '123',
+      date: '2024-10-10', // <- encoded as a string
+      input: `#overhead 1hr staff meeting`,
+      duration: 60,
+    }),
+  )
   expect(decoded).toEqual({
     id: 'abc',
     userId: '123',
