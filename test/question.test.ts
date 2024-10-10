@@ -4,9 +4,9 @@ import { Either } from 'effect'
 import { assert, expect, test } from 'vitest'
 import { LocalDateFromString, LocalDateSchema } from '../schema/LocalDate'
 
-// I'm working on an hours tracking app where unstructured text input into a calendar gets parsed into
-// time entries. For example, if I enter `#overhead 1hr staff meeting` on a given day, the object we
-// start with might look like this:
+// In the hours app, unstructured text input into a calendar gets parsed into time entries. For
+// example, if I enter `#overhead 1hr staff meeting` on a given day, the object we start with might
+// look like this:
 
 const timeEntryInput = {
   userId: '123',
@@ -89,7 +89,8 @@ const DurationFromInput = S.transformOrFail(S.String, S.Number, {
     return result ? ParseResult.succeed(result) : fail('NO_DURATION')
   },
 
-  encode: duration => ParseResult.succeed(`${duration}min`),
+  encode: (duration, _, ast) =>
+    ParseResult.fail(new ParseResult.Forbidden(ast, duration, 'DurationFromInput is read-only')),
 })
 
 class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
@@ -121,6 +122,7 @@ test('DurationFromInput ', () => {
   expect(decoded).toBe(60)
 })
 
+// Now we can transform a TimeEntryInput into a TimeEntry:
 const TimeEntryFromInput = S.transformOrFail(TimeEntryInput, TimeEntry, {
   strict: true,
   decode: ({ userId, date, input }) => {
@@ -179,6 +181,8 @@ test('encoded TimeEntry', () => {
   })
   assert(Either.isRight(encodeResult))
   const encoded = encodeResult.right
+  expect(encoded.date).toEqual('2024-10-10')
+  expect(encoded.duration).toEqual(60)
   expect(encoded).toEqual({
     id: 'abc',
     userId: '123',
