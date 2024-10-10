@@ -1,10 +1,10 @@
 import { Schema as S } from '@effect/schema'
 import { Either } from 'effect'
 import { assert, describe, expect, test as _test } from 'vitest'
-import { DurationFromInput } from '../schema/Duration'
+import { ParsedDurationFromInput } from '../schema/Duration'
 
 describe('Duration', () => {
-  const decode = S.decodeEither(DurationFromInput)
+  const decode = S.decodeEither(ParsedDurationFromInput)
 
   const testCases: TestCase[] = [
     // INVALID
@@ -76,6 +76,7 @@ describe('Duration', () => {
   ]
 
   const errorPadding = Math.max(...testCases.filter(tc => tc.error).map(tc => tc.error!.length))
+
   for (const { input, error, duration, only, skip } of testCases) {
     const test = only ? _test.only : skip ? _test.skip : _test
     const label = error ? `⛔ ${input.padEnd(errorPadding)} ${error}` : `✅ ${input}`

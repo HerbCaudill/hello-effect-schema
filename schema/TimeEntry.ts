@@ -2,7 +2,7 @@ import { ParseResult, Schema as S } from '@effect/schema'
 import { LocalDateFromString, LocalDateSchema } from './LocalDate'
 import { Project, ProjectFromInput } from './Project'
 import { UserId } from './User'
-import { DurationFromInput } from './Duration'
+import { ParsedDurationFromInput } from './Duration'
 import { pipe } from 'effect'
 import { createId, Cuid } from './Cuid'
 import { Client, ClientFromInput } from './Client'
@@ -20,7 +20,7 @@ export class ParsedTimeEntry extends S.Class<ParsedTimeEntry>('ParsedTimeEntry')
   userId: UserId,
   date: LocalDateSchema,
   input: S.String,
-  duration: DurationFromInput,
+  duration: ParsedDurationFromInput,
   project: ProjectFromInput,
   client: ClientFromInput,
   timestamp: S.optionalWith(S.Date, { default: () => new Date(), exact: true }),

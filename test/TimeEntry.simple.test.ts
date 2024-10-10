@@ -2,20 +2,14 @@ import { Schema as S } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
 import { Effect as E, Either, pipe } from 'effect'
 import { assert, describe, expect, test } from 'vitest'
-import { Clients, ClientsProvider } from '../schema/Client'
-import { Projects, ProjectsProvider } from '../schema/Project'
-import { ParsedTimeEntryFromInput } from '../schema/TimeEntry'
-import { type ParsedTimeEntry, type TimeEntryInput } from '../schema/TimeEntry.old'
-import type { UserId } from '../schema/User'
-import { testClients } from './testClients'
-import { testProjects } from './testProjects'
+import {
+  TimeEntryInput,
+  ParsedTimeEntryFromInput,
+  TimeEntryFromParsedTimeEntry,
+  type ParsedTimeEntry,
+} from '../schema/TimeEntrySimple'
 
-/** Instantiated ProjectsProvider with our list of projects */
-
-describe('TimeEntry', () => {
-  const TestProjects = new ProjectsProvider(testProjects)
-  const TestClients = new ClientsProvider(testClients)
-
+describe('TimeEntry (simple)', () => {
   describe('ParsedTimeEntry from input', () => {
     const testCases = [
       // failure
@@ -28,9 +22,6 @@ describe('TimeEntry', () => {
       {
         input: '1h #Support: Ongoing @ABA update geography',
         duration: 60,
-        projectId: '0005',
-        clientId: '0001',
-        description: 'update geography',
       },
     ] as TestCase[]
 
@@ -38,19 +29,15 @@ describe('TimeEntry', () => {
       pipe(
         input, //
         S.decode(ParsedTimeEntryFromInput),
-        E.provideService(Projects, TestProjects),
-        E.provideService(Clients, TestClients),
         E.either,
       )
 
-    for (const { input, error, duration, projectId, clientId, only, skip } of testCases) {
+    for (const { input, error, duration, only, skip } of testCases) {
       const testFn = only ? test.only : skip ? test.skip : test
 
       testFn(input, () => {
-        const date = LocalDate.now()
-        const userId = '1234' as UserId
-        const result = E.runSync(decode({ date, userId, input }))
-        Either.match(result, {
+        const decoded = E.runSync(decode({ input }))
+        Either.match(decoded, {
           onLeft: e => {
             assert(error, `expected success but got error ${e.message}`)
             expect(e.message).toContain(error)
@@ -58,14 +45,39 @@ describe('TimeEntry', () => {
           onRight: parsed => {
             assert(!error, `expected error ${error} but got success`)
             expect(parsed.input).toEqual(input)
-            expect(parsed.project.project.id).toEqual(projectId)
-            expect(parsed.client.client.id).toEqual(clientId)
             expect(parsed.duration.minutes).toEqual(duration)
-            expect(parsed.timestamp).toBeInstanceOf(Date)
           },
         })
       })
     }
+  })
+
+  describe('TimeEntryFromParsedTimeEntry', () => {
+    const input = '1h #Support: Ongoing @aba update geography'
+    const parsedTimeEntry: ParsedTimeEntry = {
+      input,
+      duration: { input, text: '1h', minutes: 60 },
+    }
+
+    const decode = (parsedTimeEntry: ParsedTimeEntry) =>
+      pipe(
+        { input: parsedTimeEntry.input, duration: parsedTimeEntry.input }, //
+        S.decode(TimeEntryFromParsedTimeEntry),
+        E.either,
+      )
+
+    test('decodes ', () => {
+      const decoded = E.runSync(decode(parsedTimeEntry))
+      Either.match(decoded, {
+        onLeft: e => {
+          throw new Error()
+        },
+        onRight: parsed => {
+          expect(parsed.input).toEqual(input)
+          expect(parsed.duration).toEqual(60)
+        },
+      })
+    })
   })
 })
 

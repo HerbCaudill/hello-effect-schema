@@ -1,18 +1,8 @@
 import { ParseResult, Schema as S } from '@effect/schema'
+import { Either } from 'effect'
+import { assert, expect, test } from 'vitest'
 
-/** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
-export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
-  /** The original input string, e.g. `#out 1:15 dentist` */
-  input: S.String,
-
-  /** The duration in text form, e.g. `1:15` */
-  text: S.String,
-
-  /** The duration in minutes, e.g. 75 */
-  minutes: S.Number,
-}) {}
-
-export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuration, {
+export const DurationFromInput = S.transformOrFail(S.String, S.Number, {
   strict: true,
   decode: (input, _, ast) => {
     const fail = (message: string) => ParseResult.fail(new ParseResult.Type(ast, input, message))
@@ -28,7 +18,7 @@ export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuratio
       /^(?<text>(?<hrsDecimal>\d*\.\d+)(hrs|hr|h)?)$/i,
     ]
 
-    let result: ParsedDuration | undefined
+    let result: number | undefined
 
     for (const word of input.split(/\s+/)) {
       for (const format of formats) {
@@ -45,7 +35,7 @@ export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuratio
           // Can't have more than one result
           if (result) return fail('MULTIPLE_DURATIONS')
 
-          result = { input, text, minutes }
+          result = minutes
         }
       }
     }
@@ -53,5 +43,11 @@ export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuratio
     return result ? ParseResult.succeed(result) : fail('NO_DURATION')
   },
 
-  encode: ({ input }) => ParseResult.succeed(input),
+  encode: duration => ParseResult.succeed(`${duration}min`),
 })
+
+const decode = S.decodeEither(DurationFromInput)
+const result = decode(`#overhead 1hr staff meeting`)
+assert(Either.isRight(result))
+const decoded = result.right
+expect(decoded).toBe(60)
