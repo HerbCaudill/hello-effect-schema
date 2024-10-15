@@ -81,12 +81,9 @@ export class ParsedClient extends S.Class<ParsedClient>('ParsedClient')({
 
   /** The client object */
   client: Client,
-}) {}
-
-export const ClientFromInput = S.transformOrFail(S.String, ParsedClient, {
-  strict: true,
-  decode: (input, _, ast) =>
-    Clients.pipe(
+}) {
+  static fromInput(input: string) {
+    return Clients.pipe(
       E.flatMap(clients => {
         const clientCodeRegex = /^(?<text>(?:@)(?<code>[a-zA-Z0-9\-]+))$/i
 
@@ -98,22 +95,19 @@ export const ClientFromInput = S.transformOrFail(S.String, ParsedClient, {
             const { text = '', code = '' } = match.groups!
 
             // Can't have more than one result
-            if (result)
-              return ParseResult.fail(new ParseResult.Type(ast, input, 'MULTIPLE_CLIENTS'))
+            if (result) return E.fail(new Error('MULTIPLE_CLIENTS'))
 
             result = { text, code }
           }
         }
 
-        if (result === undefined)
-          return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_CLIENT'))
+        if (result === undefined) return E.succeed(null)
 
         const client = clients.getByCode(result.code)
         return client //
-          ? ParseResult.succeed({ text: result.text, client })
-          : ParseResult.fail(new ParseResult.Type(ast, input, 'CLIENT_NOT_FOUND'))
+          ? E.succeed({ text: result.text, client })
+          : E.fail(new Error('CLIENT_NOT_FOUND'))
       }),
-    ),
-  encode: (input, _, ast) =>
-    ParseResult.fail(new ParseResult.Type(ast, input, 'cannot encode a client')),
-})
+    )
+  }
+}

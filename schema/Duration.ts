@@ -1,4 +1,5 @@
 import { ParseResult, Schema as S } from '@effect/schema'
+import { Effect as E } from 'effect'
 
 /** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
 export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
@@ -10,13 +11,8 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
 
   /** The duration in minutes, e.g. 75 */
   duration: S.Number,
-}) {}
-
-export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuration, {
-  strict: true,
-  decode: (input, _, ast) => {
-    const fail = (message: string) => ParseResult.fail(new ParseResult.Type(ast, input, message))
-
+}) {
+  static fromInput(input: string) {
     const formats = [
       // 1:15, :15
       /^(?<text>(?<hrs>\d+)?:(?<mins>\d+))$/i,
@@ -43,15 +39,13 @@ export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuratio
           if (duration <= 0 || isNaN(duration)) continue
 
           // Can't have more than one result
-          if (result) return fail('MULTIPLE_DURATIONS')
+          if (result) return E.fail(new Error('MULTIPLE_DURATIONS'))
 
           result = { input, text, duration }
         }
       }
     }
 
-    return result ? ParseResult.succeed(result) : fail('NO_DURATION')
-  },
-
-  encode: ({ input }) => ParseResult.succeed(input),
-})
+    return result ? E.succeed(result) : E.fail(new Error('NO_DURATION'))
+  }
+}

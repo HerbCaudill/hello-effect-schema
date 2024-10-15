@@ -1,6 +1,7 @@
 import { ParseResult, Schema as S } from '@effect/schema'
 import { Context, Effect as E, pipe } from 'effect'
 import { createId, Cuid } from './Cuid'
+import { compose } from 'effect/Function'
 
 export const ProjectId = pipe(Cuid, S.brand('ProjectId'))
 export type ProjectId = typeof ProjectId.Type
@@ -47,55 +48,16 @@ export class ProjectsProvider {
 
 export class Projects extends Context.Tag('Projects')<Projects, ProjectsProvider>() {}
 
-/** Schema for a `projectId` encoded as a `code` */
-export const ProjectIdFromCode = S.transformOrFail(S.String, ProjectId, {
-  strict: true,
-  decode: (code, _, ast) =>
-    E.gen(function* () {
-      const projects = yield* Projects
-      const project = projects.getByCode(code)
-      return yield* project //
-        ? E.succeed(project.id)
-        : E.fail(new ParseResult.Type(ast, code, 'PROJECT_NOT_FOUND'))
-    }),
-  encode: (id, _, ast) =>
-    E.gen(function* () {
-      const projects = yield* Projects
-      const project = projects.getByCode(id)
-      return yield* project //
-        ? E.succeed(project.code)
-        : E.fail(new ParseResult.Type(ast, id, 'PROJECT_NOT_FOUND'))
-    }),
-})
-
-/** Schema for a `Project` encoded as a `projectId` */
-export const ProjectFromId = S.transformOrFail(ProjectId, Project, {
-  strict: true,
-  decode: (id, _, ast) =>
-    E.gen(function* () {
-      const projects = yield* Projects
-      const project = projects.getById(id)
-      return yield* project //
-        ? E.succeed(project)
-        : E.fail(new ParseResult.Type(ast, id, 'PROJECT_NOT_FOUND'))
-    }),
-  encode: project => ParseResult.succeed(project.id as ProjectId),
-})
-
 export class ParsedProject extends S.Class<ParsedProject>('ParsedProject')({
   /** The project in text form, e.g. `#Support: Ongoing` */
   text: S.String,
 
   /** The project object */
   project: Project,
-}) {}
-
-/** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
-export const ProjectFromInput = S.transformOrFail(S.String, ParsedProject, {
-  strict: true,
-  decode: (input, _, ast) =>
-    Projects.pipe(
-      E.flatMap(projects => {
+}) {
+  static fromInput(input: string) {
+    return Projects.pipe(
+      E.andThen(projects => {
         const projectCodeRegex =
           /(?<=^|\s)(?<text>(?:#)(?<code>[a-zA-Z0-9\-]+(\:\s*[a-zA-Z0-9\-]+)?))(?=$|\s)/gim
 
@@ -105,17 +67,15 @@ export const ProjectFromInput = S.transformOrFail(S.String, ParsedProject, {
           return { text, code }
         })
 
-        if (results.length > 1)
-          return ParseResult.fail(new ParseResult.Type(ast, input, 'MULTIPLE_PROJECTS'))
-        if (results.length === 0)
-          return ParseResult.fail(new ParseResult.Type(ast, input, 'NO_PROJECT'))
+        if (results.length > 1) return E.fail(new Error('MULTIPLE_PROJECTS'))
+        if (results.length === 0) return E.fail(new Error('NO_PROJECT'))
 
         const { code, text } = results[0]
         const project = projects.getByCode(code)
         return project //
-          ? ParseResult.succeed({ text, project })
-          : ParseResult.fail(new ParseResult.Type(ast, input, 'PROJECT_NOT_FOUND'))
+          ? E.succeed({ text, project })
+          : E.fail(new Error('PROJECT_NOT_FOUND'))
       }),
-    ),
-  encode: (input, _, ast) => ParseResult.fail(new ParseResult.Type(ast, input, 'cannot encode')),
-})
+    )
+  }
+}

@@ -1,11 +1,8 @@
-import { Schema as S } from '@effect/schema'
-import { Either } from 'effect'
-import { assert, describe, expect, test as _test } from 'vitest'
-import { ParsedDurationFromInput } from '../schema/Duration'
+import { Effect as E, Either, pipe } from 'effect'
+import { test as _test, assert, describe, expect } from 'vitest'
+import { ParsedDuration } from '../schema/Duration'
 
 describe('Duration', () => {
-  const decode = S.decodeEither(ParsedDurationFromInput)
-
   const testCases: TestCase[] = [
     // INVALID
 
@@ -77,11 +74,18 @@ describe('Duration', () => {
 
   const errorPadding = Math.max(...testCases.filter(tc => tc.error).map(tc => tc.error!.length))
 
+  const decode = (input: string) =>
+    pipe(
+      input, //
+      ParsedDuration.fromInput,
+      E.either,
+    )
+
   for (const { input, error, duration, only, skip } of testCases) {
     const test = only ? _test.only : skip ? _test.skip : _test
     const label = error ? `⛔ ${input.padEnd(errorPadding)} ${error}` : `✅ ${input}`
     test(label, () => {
-      const result = decode(input)
+      const result = E.runSync(decode(input))
       if (Either.isLeft(result)) {
         assert(error, `expected success but got error ${result.left}`)
         expect(result.left.toString()).toContain(error)

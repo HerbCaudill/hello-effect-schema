@@ -1,4 +1,4 @@
-import { type Client } from '../schema/Client'
+import { Client } from '../schema/Client'
 
 /** Sample list of clients */
 export const testClients = [
@@ -10,4 +10,4 @@ export const testClients = [
     id: '0002',
     code: 'chemonics',
   },
-] as Client[]
+].map(c => new Client(c))

@@ -1,13 +1,11 @@
 import { Schema as S } from '@effect/schema'
-import { Effect as E } from 'effect'
-import { pipe } from 'effect'
-import { Client, ClientFromInput } from './Client'
+import { Effect as E, pipe } from 'effect'
+import { Client, ParsedClient } from './Client'
 import { createId, Cuid } from './Cuid'
+import { ParsedDuration } from './Duration'
 import { LocalDateSchema } from './LocalDate'
-import { Project, ProjectFromInput } from './Project'
+import { ParsedProject, Project } from './Project'
 import { UserId } from './User'
-import { ParsedDurationFromInput } from './Duration'
-import { DateFromNumber } from '@effect/schema/Schema'
 
 export const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
 export type TimeEntryId = typeof TimeEntryId.Type
@@ -28,23 +26,31 @@ export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   client: S.optional(Client),
   description: S.optional(S.String),
   input: S.String,
-  timestamp: S.optionalWith(DateFromNumber, { default: () => new Date(), exact: true }),
+  timestamp: S.optionalWith(S.DateFromSelf, { default: () => new Date(), exact: true }),
 }) {
   static fromInput({ userId, date, input }: TimeEntryInput) {
     return E.gen(function* (_) {
-      const { duration, text: durationText } = yield* _(S.decode(ParsedDurationFromInput)(input))
-      const { project, text: projectText } = yield* _(S.decode(ProjectFromInput)(input))
-      const { client, text: clientText } = yield* _(S.decode(ClientFromInput)(input))
+      const parsedDuration = yield* _(ParsedDuration.fromInput(input))
+      const parsedProject = yield* _(ParsedProject.fromInput(input))
+      const parsedClient = yield* _(ParsedClient.fromInput(input))
 
       // The description is the remaining text after we've removed the duration, project, and client
       const description = collapseWhitespace(
         input //
-          .replace(durationText, '')
-          .replace(projectText, '')
-          .replace(clientText, ''),
+          .replace(parsedDuration.text, '')
+          .replace(parsedProject.text, '')
+          .replace(parsedClient?.text ?? '', ''),
       )
 
-      return new TimeEntry({ userId, date, duration, project, client, description, input })
+      return new TimeEntry({
+        userId,
+        date,
+        duration: parsedDuration.duration,
+        project: parsedProject.project,
+        client: parsedClient?.client,
+        description,
+        input,
+      })
     })
   }
 }

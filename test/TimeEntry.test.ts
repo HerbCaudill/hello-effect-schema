@@ -14,7 +14,7 @@ describe('TimeEntry', () => {
   const TestProjects = new ProjectsProvider(testProjects)
   const TestClients = new ClientsProvider(testClients)
 
-  describe('from input', () => {
+  describe('ParsedTimeEntry from input', () => {
     const testCases = [
       // failure
       {
@@ -27,6 +27,18 @@ describe('TimeEntry', () => {
       },
 
       // success
+      {
+        input: '#out 1:15',
+        duration: 75,
+        projectId: '0002',
+        description: '',
+      },
+      {
+        input: '#out 1:15 doctor',
+        duration: 75,
+        projectId: '0002',
+        description: 'doctor',
+      },
       {
         input: '1h #Support: Ongoing @ABA update geography',
         duration: 60,
@@ -68,9 +80,16 @@ describe('TimeEntry', () => {
           },
           onRight: parsed => {
             assert(!error, `expected error ${error} but got success`)
+            expect(parsed.id).toBeTypeOf('string')
             expect(parsed.input).toEqual(input)
             expect(parsed.project.id).toEqual(projectId)
-            expect(parsed.client!.id).toEqual(clientId)
+
+            if (clientId) {
+              expect(parsed.client?.id).toEqual(clientId)
+            } else {
+              expect(parsed.client).toBeUndefined()
+            }
+
             expect(parsed.duration).toEqual(duration)
             expect(parsed.description).toEqual(description)
             expect(parsed.timestamp).toBeInstanceOf(Date)
