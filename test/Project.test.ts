@@ -1,5 +1,5 @@
 import { Effect as E, pipe } from 'effect'
-import { describe } from 'vitest'
+import { describe, expect } from 'vitest'
 import { ParsedProject, Projects, ProjectsProvider } from '../schema/Project'
 import { runTestCases, type BaseTestCase } from './lib/runTestCases'
 import { testProjects } from './lib/testProjects'
@@ -27,10 +27,10 @@ describe('Project', () => {
         ParsedProject.fromInput,
         E.provideService(Projects, TestProjects),
       ),
-    mapResult: result => ({
-      id: result.project.id,
-      text: result.text,
-    }),
+    validate: (expected, actual) => {
+      expect(actual.project.id).toEqual(expected.id)
+      expect(actual.text).toEqual(expected.text)
+    },
   })
 })
 

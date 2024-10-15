@@ -1,4 +1,4 @@
-import { describe } from 'vitest'
+import { describe, expect } from 'vitest'
 import { ParsedDuration } from '../schema/Duration'
 import { runTestCases, BaseTestCase } from './lib/runTestCases'
 
@@ -72,13 +72,12 @@ describe('Duration', () => {
     { input: '#out 1.25hrs', duration: 75 },
   ]
 
-  const errorPadding = Math.max(...testCases.filter(tc => tc.error).map(tc => tc.error!.length))
-
   runTestCases({
     testCases,
     decoder: ParsedDuration.fromInput,
-    label: ({ input, error }) =>
-      error ? `⛔ ${input.padEnd(errorPadding)} ${error}` : `✅ ${input}`,
+    validate: (expected, actual) => {
+      expect(actual.duration).toEqual(expected.duration)
+    },
   })
 })
 

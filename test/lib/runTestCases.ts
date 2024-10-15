@@ -4,16 +4,16 @@ import { test as _test, assert, expect } from 'vitest'
 export const runTestCases = <TestCase extends BaseTestCase, ExpectedSchema extends Object | null>({
   testCases,
   decoder,
+  validate = () => {},
   label = ({ input }) => input,
-  mapResult = result => result,
 }: {
   testCases: TestCase[]
   decoder: (input: string) => E.Effect<ExpectedSchema, Error>
+  validate: (expected: TestCase, actual: ExpectedSchema) => void
   label?: (testCase: TestCase) => string
-  mapResult?: (result: ExpectedSchema) => any
 }) => {
   for (const testCase of testCases) {
-    const { input, error, only, skip, ...testFields } = testCase
+    const { input, error, only, skip } = testCase
     const test = only ? _test.only : skip ? _test.skip : _test
 
     const decode = (input: string) =>
@@ -23,16 +23,19 @@ export const runTestCases = <TestCase extends BaseTestCase, ExpectedSchema exten
         E.either,
         E.runSync,
       )
-    test(label(testCase), () => {
+
+    const errorPadding = Math.max(...testCases.filter(tc => tc.error).map(tc => label(tc).length))
+    const testName = error ? `⛔ ${input.padEnd(errorPadding)} ${error}` : `✅ ${label(testCase)}`
+
+    test(testName, () => {
       const result = decode(input)
       if (Either.isLeft(result)) {
         assert(error, `expected success but got error ${result.left}`)
         expect(result.left.toString()).toContain(error)
       } else {
         assert(!error, `expected error ${error}`)
-        const parseResult = mapResult(result.right)
-        for (const [key, value] of Object.entries(testFields))
-          expect(parseResult[key]).toEqual(value)
+        const parseResult = result.right
+        validate(testCase, parseResult)
       }
     })
   }
