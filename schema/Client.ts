@@ -39,41 +39,6 @@ export class ClientsProvider {
 /** This defines the tag for the ClientsProvider */
 export class Clients extends Context.Tag('Clients')<Clients, ClientsProvider>() {}
 
-/** Schema for a `clientId` encoded as a `code` */
-export const ClientIdFromCode = S.transformOrFail(S.String, ClientId, {
-  strict: true,
-  decode: (code, _, ast) =>
-    E.gen(function* () {
-      const clients = yield* Clients
-      const client = clients.getByCode(code)
-      return yield* client //
-        ? E.succeed(client.id)
-        : E.fail(new ParseResult.Type(ast, code, 'CLIENT_NOT_FOUND'))
-    }),
-  encode: (id, _, ast) =>
-    E.gen(function* () {
-      const clients = yield* Clients
-      const client = clients.getByCode(id)
-      return yield* client //
-        ? E.succeed(client.code)
-        : E.fail(new ParseResult.Type(ast, id, 'CLIENT_NOT_FOUND'))
-    }),
-})
-
-/** Schema for a `Client` encoded as a `clientId` */
-export const ClientFromId = S.transformOrFail(ClientId, Client, {
-  strict: true,
-  decode: (id, _, ast) =>
-    E.gen(function* () {
-      const clients = yield* Clients
-      const client = clients.getById(id)
-      return yield* client //
-        ? E.succeed(client)
-        : E.fail(new ParseResult.Type(ast, id, 'CLIENT_NOT_FOUND'))
-    }),
-  encode: client => ParseResult.succeed(client.id as ClientId),
-})
-
 /** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
 export class ParsedClient extends S.Class<ParsedClient>('ParsedClient')({
   /** The client in text form, e.g. `#Support: Ongoing` */

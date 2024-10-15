@@ -7,40 +7,6 @@ import { testClients } from './testClients'
 describe('Client', () => {
   const TestClients = new ClientsProvider(testClients)
 
-  describe('ClientIdFromCode', () => {
-    const testCases: TestCase[] = [
-      { input: '', error: 'CLIENT_NOT_FOUND' },
-      { input: 'asdfasdf', error: 'CLIENT_NOT_FOUND' },
-      { input: 'aba', clientId: '0001' },
-      { input: 'chemonics', clientId: '0002' },
-    ]
-
-    const decode = (code: string) =>
-      pipe(
-        code, //
-        S.decode(ClientIdFromCode),
-        E.provideService(Clients, TestClients),
-        E.either,
-      )
-
-    for (const { input, error, clientId, only, skip } of testCases) {
-      const test = only ? _test.only : skip ? _test.skip : _test
-
-      test(input, () => {
-        const result = E.runSync(decode(input))
-        Either.match(result, {
-          onLeft: e => {
-            assert(error, `expected success but got error ${e.message}`)
-            expect(e.message).toContain(error)
-          },
-          onRight: parsedId => {
-            expect(parsedId).toEqual(clientId)
-          },
-        })
-      })
-    }
-  })
-
   describe('ClientFromInput', () => {
     const testCases: TestCase[] = [
       { input: '@aba @chemonics', error: 'MULTIPLE_CLIENTS' },
@@ -55,13 +21,14 @@ describe('Client', () => {
         ParsedClient.fromInput,
         E.provideService(Clients, TestClients),
         E.either,
+        E.runSync,
       )
 
     for (const { input, error, clientId, text, isNull, only, skip } of testCases) {
       const test = only ? _test.only : skip ? _test.skip : _test
 
       test(input, () => {
-        const result = E.runSync(decode(input))
+        const result = decode(input)
         Either.match(result, {
           onLeft: e => {
             assert(error, `expected success but got error ${e.message}`)

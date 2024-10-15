@@ -12,7 +12,7 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
   /** The duration in minutes, e.g. 75 */
   duration: S.Number,
 }) {
-  static fromInput(input: string) {
+  static fromInput(input: string): E.Effect<ParsedDuration, Error> {
     const formats = [
       // 1:15, :15
       /^(?<text>(?<hrs>\d+)?:(?<mins>\d+))$/i,

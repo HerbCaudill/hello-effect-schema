@@ -79,13 +79,14 @@ describe('Duration', () => {
       input, //
       ParsedDuration.fromInput,
       E.either,
+      E.runSync,
     )
 
   for (const { input, error, duration, only, skip } of testCases) {
     const test = only ? _test.only : skip ? _test.skip : _test
     const label = error ? `⛔ ${input.padEnd(errorPadding)} ${error}` : `✅ ${input}`
     test(label, () => {
-      const result = E.runSync(decode(input))
+      const result = decode(input)
       if (Either.isLeft(result)) {
         assert(error, `expected success but got error ${result.left}`)
         expect(result.left.toString()).toContain(error)

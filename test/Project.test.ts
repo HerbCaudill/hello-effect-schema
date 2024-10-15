@@ -7,7 +7,7 @@ describe('Project', () => {
   const TestProjects = new ProjectsProvider(testProjects)
 
   describe('from input', () => {
-    const testCases: TestCase[] = [
+    const testCases = [
       // failure
       { input: '', error: 'NO_PROJECT' },
       { input: 'Support', error: 'NO_PROJECT' },
@@ -27,13 +27,14 @@ describe('Project', () => {
         ParsedProject.fromInput,
         E.provideService(Projects, TestProjects),
         E.either,
+        E.runSync,
       )
 
     for (const { input, error, projectId, text, only, skip } of testCases) {
       const test = only ? _test.only : skip ? _test.skip : _test
 
       test(input, () => {
-        const result = E.runSync(decode(input))
+        const result = decode(input)
         Either.match(result, {
           onLeft: e => {
             assert(error, `expected success but got error ${e.message}`)

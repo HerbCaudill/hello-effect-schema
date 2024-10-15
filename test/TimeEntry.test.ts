@@ -55,6 +55,7 @@ describe('TimeEntry', () => {
         E.provideService(Projects, TestProjects),
         E.provideService(Clients, TestClients),
         E.either,
+        E.runSync,
       )
 
     for (const {
@@ -72,7 +73,7 @@ describe('TimeEntry', () => {
       testFn(input, () => {
         const date = LocalDate.now()
         const userId = '1234' as UserId
-        const result = E.runSync(decode({ date, userId, input }))
+        const result = decode({ date, userId, input })
         Either.match(result, {
           onLeft: e => {
             assert(error, `expected success but got error ${e.message}`)
