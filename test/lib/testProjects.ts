@@ -1,5 +1,4 @@
-import { Project, ProjectsProvider, type ProjectId } from '../schema/Project'
-import { ParseResult, Schema as S } from '@effect/schema'
+import { Project, type ProjectId } from '../../schema/Project'
 
 /** Instantiated ProjectsProvider with our list of projects */
 export const testProjects = [

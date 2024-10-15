@@ -2,7 +2,7 @@ import { Effect as E, pipe } from 'effect'
 import { describe } from 'vitest'
 import { Clients, ClientsProvider, ParsedClient } from '../schema/Client'
 import { runTestCases, type BaseTestCase } from './lib/runTestCases'
-import { testClients } from './testClients'
+import { testClients } from './lib/testClients'
 
 describe('Client', () => {
   const TestClients = new ClientsProvider(testClients)

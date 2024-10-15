@@ -6,8 +6,8 @@ import { Projects, ProjectsProvider } from '../schema/Project'
 import { TimeEntry } from '../schema/TimeEntry'
 import type { UserId } from '../schema/User'
 import { runTestCases, type BaseTestCase } from './lib/runTestCases'
-import { testClients } from './testClients'
-import { testProjects } from './testProjects'
+import { testClients } from './lib/testClients'
+import { testProjects } from './lib/testProjects'
 
 describe('TimeEntry', () => {
   const TestProjects = new ProjectsProvider(testProjects)
