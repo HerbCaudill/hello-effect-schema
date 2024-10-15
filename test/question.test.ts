@@ -4,7 +4,7 @@ import { Effect as E } from 'effect'
 import { expect, test } from 'vitest'
 import { LocalDateFromString, LocalDateSchema } from '../schema/LocalDate'
 import { UserId } from '../schema/User'
-import { TimeEntryId } from '../schema/TimeEntry.old'
+import { TimeEntryId } from '../schema/TimeEntry'
 
 // In the hours app, unstructured text input into a calendar gets parsed into time entries. For
 // example, if I enter `#overhead 1hr staff meeting` on a given day, the object we start with might

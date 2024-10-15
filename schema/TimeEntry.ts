@@ -1,11 +1,13 @@
-import { ParseResult, Schema as S } from '@effect/schema'
-import { LocalDateFromString, LocalDateSchema } from './LocalDate'
+import { Schema as S } from '@effect/schema'
+import { Effect as E } from 'effect'
+import { pipe } from 'effect'
+import { Client, ClientFromInput } from './Client'
+import { createId, Cuid } from './Cuid'
+import { LocalDateSchema } from './LocalDate'
 import { Project, ProjectFromInput } from './Project'
 import { UserId } from './User'
 import { ParsedDurationFromInput } from './Duration'
-import { pipe } from 'effect'
-import { createId, Cuid } from './Cuid'
-import { Client, ClientFromInput } from './Client'
+import { DateFromNumber } from '@effect/schema/Schema'
 
 export const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
 export type TimeEntryId = typeof TimeEntryId.Type
@@ -16,36 +18,6 @@ export class TimeEntryInput extends S.Class<TimeEntryInput>('TimeEntryInput')({
   input: S.String,
 }) {}
 
-export class ParsedTimeEntry extends S.Class<ParsedTimeEntry>('ParsedTimeEntry')({
-  userId: UserId,
-  date: LocalDateSchema,
-  input: S.String,
-  duration: ParsedDurationFromInput,
-  project: ProjectFromInput,
-  client: ClientFromInput,
-  timestamp: S.optionalWith(S.Date, { default: () => new Date(), exact: true }),
-}) {}
-
-export const ParsedTimeEntryFromInput = S.transformOrFail(TimeEntryInput, ParsedTimeEntry, {
-  strict: true,
-  decode: ({ userId, date, input }) => {
-    return ParseResult.succeed({
-      userId,
-      date,
-      input,
-      duration: input,
-      project: input,
-      client: input,
-    })
-  },
-  encode: decoded =>
-    ParseResult.succeed({
-      userId: decoded.userId as UserId,
-      date: decoded.date,
-      input: decoded.input,
-    }),
-})
-
 /** A time entry that decodes from serialized form (e.g. from storage) */
 export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   id: S.optionalWith(TimeEntryId, { default: () => createId() as TimeEntryId, exact: true }),
@@ -53,43 +25,28 @@ export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   date: LocalDateSchema,
   duration: S.Number,
   project: Project,
-  client: Client,
+  client: S.optional(Client),
   description: S.optional(S.String),
   input: S.String,
-  timestamp: S.DateFromSelf,
-}) {}
+  timestamp: S.optionalWith(DateFromNumber, { default: () => new Date(), exact: true }),
+}) {
+  static fromInput({ userId, date, input }: TimeEntryInput) {
+    return E.gen(function* (_) {
+      const { duration, text: durationText } = yield* _(S.decode(ParsedDurationFromInput)(input))
+      const { project, text: projectText } = yield* _(S.decode(ProjectFromInput)(input))
+      const { client, text: clientText } = yield* _(S.decode(ClientFromInput)(input))
 
-/** Decodes a ParsedTimeEntry into a TimeEntry */
-export const TimeEntryFromParsedTimeEntry = S.transformOrFail(ParsedTimeEntry, TimeEntry, {
-  strict: true,
-  decode: ({ userId, date, input, duration, project, client, timestamp }, _, ast) => {
-    const description = input
-      .replace(duration.text, '')
-      .replace(project.text, '')
-      .replace(client.text, '')
-      .trim()
+      // The description is the remaining text after we've removed the duration, project, and client
+      const description = collapseWhitespace(
+        input //
+          .replace(durationText, '')
+          .replace(projectText, '')
+          .replace(clientText, ''),
+      )
 
-    return ParseResult.succeed({
-      userId,
-      date,
-      duration: duration.minutes,
-      project: project.project,
-      client: client.client,
-      input,
-      description,
-      timestamp,
+      return new TimeEntry({ userId, date, duration, project, client, description, input })
     })
-  },
-  encode: decoded =>
-    ParseResult.succeed({
-      userId: decoded.userId as UserId,
-      date: decoded.date,
-      input: decoded.input,
-      duration: { text: `${decoded.duration}min`, minutes: decoded.duration },
-      project: { text: decoded.project.code, project: decoded.project as Project },
-      client: { text: decoded.client.code, client: decoded.client as Client },
-      timestamp: decoded.timestamp,
-    }),
-})
+  }
+}
 
-export const TimeEntryFromInput = S.compose(ParsedTimeEntryFromInput, TimeEntryFromParsedTimeEntry)
+const collapseWhitespace = (s: string) => s.replace(/\s+/g, ' ').trim()

@@ -9,7 +9,7 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
   text: S.String,
 
   /** The duration in minutes, e.g. 75 */
-  minutes: S.Number,
+  duration: S.Number,
 }) {}
 
 export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuration, {
@@ -23,7 +23,7 @@ export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuratio
       // 1h, 2hrs, 1h45, 1h45m
       /^(?<text>(?<hrs>\d+)(hrs|hr|h)((?<mins>\d+)(mins|min|m)?)?)$/i,
       // 45m, 45min
-      /^(?<text>(?<mins>\d+)(mins|min|m))$/i,
+      /^(?<text>(?<mins>\d+)(mins|min|mn|m))$/i,
       // 2.15, .25, 2.15hrs
       /^(?<text>(?<hrsDecimal>\d*\.\d+)(hrs|hr|h)?)$/i,
     ]
@@ -35,17 +35,17 @@ export const ParsedDurationFromInput = S.transformOrFail(S.String, ParsedDuratio
         const match = word.match(format)
         if (match) {
           const { text, hrs = '0', mins = '0', hrsDecimal } = match.groups!
-          const minutes = hrsDecimal
+          const duration = hrsDecimal
             ? Math.round(Number(hrsDecimal) * 60) // decimal
             : Number(hrs) * 60 + Number(mins) // hours+minutes
 
           // Make sure we got a valid non-zero number
-          if (minutes <= 0 || isNaN(minutes)) continue
+          if (duration <= 0 || isNaN(duration)) continue
 
           // Can't have more than one result
           if (result) return fail('MULTIPLE_DURATIONS')
 
-          result = { input, text, minutes }
+          result = { input, text, duration }
         }
       }
     }

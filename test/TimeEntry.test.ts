@@ -1,11 +1,9 @@
-import { Schema as S } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
 import { Effect as E, Either, pipe } from 'effect'
 import { assert, describe, expect, test } from 'vitest'
 import { Clients, ClientsProvider } from '../schema/Client'
 import { Projects, ProjectsProvider } from '../schema/Project'
-import { ParsedTimeEntryFromInput } from '../schema/TimeEntry'
-import { type ParsedTimeEntry, type TimeEntryInput } from '../schema/TimeEntry.old'
+import { TimeEntry, type TimeEntryInput } from '../schema/TimeEntry'
 import type { UserId } from '../schema/User'
 import { testClients } from './testClients'
 import { testProjects } from './testProjects'
@@ -16,12 +14,16 @@ describe('TimeEntry', () => {
   const TestProjects = new ProjectsProvider(testProjects)
   const TestClients = new ClientsProvider(testClients)
 
-  describe('ParsedTimeEntry from input', () => {
+  describe('from input', () => {
     const testCases = [
       // failure
       {
         input: '#Support: Ongoing @aba update geography',
         error: 'NO_DURATION',
+      },
+      {
+        input: '1h 30mn #Support: Ongoing @aba update geography',
+        error: 'MULTIPLE_DURATIONS',
       },
 
       // success
@@ -37,13 +39,22 @@ describe('TimeEntry', () => {
     const decode = (input: TimeEntryInput) =>
       pipe(
         input, //
-        S.decode(ParsedTimeEntryFromInput),
+        TimeEntry.fromInput,
         E.provideService(Projects, TestProjects),
         E.provideService(Clients, TestClients),
         E.either,
       )
 
-    for (const { input, error, duration, projectId, clientId, only, skip } of testCases) {
+    for (const {
+      input,
+      error,
+      duration,
+      projectId,
+      clientId,
+      description,
+      only,
+      skip,
+    } of testCases) {
       const testFn = only ? test.only : skip ? test.skip : test
 
       testFn(input, () => {
@@ -58,9 +69,10 @@ describe('TimeEntry', () => {
           onRight: parsed => {
             assert(!error, `expected error ${error} but got success`)
             expect(parsed.input).toEqual(input)
-            expect(parsed.project.project.id).toEqual(projectId)
-            expect(parsed.client.client.id).toEqual(clientId)
-            expect(parsed.duration.minutes).toEqual(duration)
+            expect(parsed.project.id).toEqual(projectId)
+            expect(parsed.client!.id).toEqual(clientId)
+            expect(parsed.duration).toEqual(duration)
+            expect(parsed.description).toEqual(description)
             expect(parsed.timestamp).toBeInstanceOf(Date)
           },
         })
