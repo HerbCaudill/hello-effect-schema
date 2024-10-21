@@ -1,12 +1,18 @@
-import { ParseResult, Schema as S } from '@effect/schema'
+import { Schema as S } from '@effect/schema'
 import { Effect as E } from 'effect'
+import {
+  buildRegExp,
+  capture, //
+  choiceOf,
+  endOfString,
+  optional,
+  startOfString,
+} from 'ts-regex-builder'
 import { TimeEntryParseError } from './TimeEntryParseError'
+import { number } from './regex'
 
 /** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
 export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
-  /** The original input string, e.g. `#out 1:15 dentist` */
-  input: S.String,
-
   /** The duration in text form, e.g. `1:15` */
   text: S.String,
 
@@ -14,40 +20,67 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
   duration: S.Number,
 }) {
   static fromInput(input: string): E.Effect<ParsedDuration, Error> {
+    const HR = choiceOf('hrs', 'hr', 'h')
+    const MIN = choiceOf('mins', 'min', 'mn', 'm')
     const formats = [
-      // 1:15, :15
-      /^(?<text>(?<hrs>\d+)?:(?<mins>\d+))$/i,
-      // 1h, 2hrs, 1h45, 1h45m
-      /^(?<text>(?<hrs>\d+)(hrs|hr|h)((?<mins>\d+)(mins|min|m)?)?)$/i,
-      // 45m, 45min
-      /^(?<text>(?<mins>\d+)(mins|min|mn|m))$/i,
       // 2.15, .25, 2.15hrs
-      /^(?<text>(?<hrsDecimal>\d*\.\d+)(hrs|hr|h)?)$/i,
+      [
+        optional([
+          capture(number, { name: 'hrs' }), //
+        ]),
+        ':',
+        capture(number, { name: 'mins' }), //
+      ],
+
+      // 1h, 2hrs, 1h45, 1h45m
+      [
+        capture(number, { name: 'hrs' }), //
+        HR,
+        optional([
+          capture(number, { name: 'mins' }), //
+          optional(MIN),
+        ]),
+      ],
+
+      // 45m, 45min
+      [
+        capture(number, { name: 'mins' }), //
+        MIN,
+      ],
+
+      // 2.15, .25, 2.15hrs
+      [
+        capture([optional(number), '.', number], { name: 'hrsDecimal' }), //
+        optional(HR),
+      ],
     ]
 
-    let result: ParsedDuration | undefined
+    const formatRegexes = formats.map(f =>
+      buildRegExp([startOfString, ...f, endOfString], { ignoreCase: true }),
+    )
 
-    for (const word of input.split(/\s+/)) {
-      for (const format of formats) {
-        const match = word.match(format)
-        if (match) {
-          const { text, hrs = '0', mins = '0', hrsDecimal } = match.groups!
-          const duration = hrsDecimal
-            ? Math.round(Number(hrsDecimal) * 60) // decimal
-            : Number(hrs) * 60 + Number(mins) // hours+minutes
+    const results = input
+      .split(/\s+/)
+      .flatMap(word =>
+        formatRegexes.map(format => {
+          const match = word.match(format)
+          if (match) {
+            const { text, hrs = '0', mins = '0', hrsDecimal } = match.groups!
 
-          // Make sure we got a valid non-zero number
-          if (duration <= 0 || isNaN(duration)) continue
+            const duration = hrsDecimal
+              ? Math.round(Number(hrsDecimal) * 60) // decimal
+              : Number(hrs) * 60 + Number(mins) // hours+minutes
 
-          // Can't have more than one result
-          if (result) return E.fail(new MultipleDurationsError({ input }))
+            // Only return this if we got a valid non-zero number
+            if (!(duration <= 0 || isNaN(duration))) return { text, duration }
+          }
+        }),
+      )
+      .filter(r => r !== undefined)
 
-          result = { input, text, duration }
-        }
-      }
-    }
-
-    return result ? E.succeed(result) : E.fail(new NoDurationError({ input }))
+    if (results.length > 1) return E.fail(new MultipleDurationsError({ input }))
+    if (results.length === 0) return E.fail(new NoDurationError({ input }))
+    return E.succeed(results[0])
   }
 }
 

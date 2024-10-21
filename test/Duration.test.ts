@@ -1,6 +1,6 @@
 import { describe, expect } from 'vitest'
 import { ParsedDuration } from '../schema/Duration'
-import { runTestCases, BaseTestCase } from './lib/runTestCases'
+import { runTestCases, BaseTestCase, only } from './lib/runTestCases'
 
 describe('Duration', () => {
   const testCases: TestCase[] = [
@@ -9,7 +9,7 @@ describe('Duration', () => {
     { input: '#proposals', error: 'NO_DURATION' },
     { input: '@aba', error: 'NO_DURATION' },
 
-    { input: '#out` -:45', error: 'NO_DURATION' }, // the minus sign keeps it from seeing this as a duration
+    { input: '#out -:45', error: 'NO_DURATION' }, // the minus sign keeps it from seeing this as a duration
     { input: '#out, 1.25min', error: 'NO_DURATION' }, // can't have decimal minutes
     { input: '#out 1', error: 'NO_DURATION' },
     { input: '#out 1.', error: 'NO_DURATION' },
@@ -25,7 +25,7 @@ describe('Duration', () => {
     { input: '#out 1:15:30', error: 'NO_DURATION' },
     { input: '#out2hrs', error: 'NO_DURATION' },
 
-    { input: '#out 1hr 30min', error: 'MULTIPLE_DURATIONS' },
+    { input: '#out 1hr 30min', error: 'MULTIPLE_DURATIONS' }, // the space causes it to see this as two durations
     { input: '#out 1:30 and 1:31', error: 'MULTIPLE_DURATIONS' },
     { input: '#out 1:01 25min', error: 'MULTIPLE_DURATIONS' },
     { input: '#out 1:30 1:31', error: 'MULTIPLE_DURATIONS' },

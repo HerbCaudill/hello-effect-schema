@@ -66,6 +66,6 @@ Thought Leadership		`
   .map((line, i) => {
     const [fullCode, requiresClient, description] = line.trim().split('\t')
     const id = i.toString().padStart(3, '0') as ProjectId
-    const [code, subCode] = fullCode.split(/:\s+/).map(s => s.trim())
+    const [code, subCode] = fullCode.split(/:\s+/).map(s => s.trim().replaceAll(' ', '-'))
     return new Project({ id, code, subCode, requiresClient: requiresClient === `yes`, description })
   })
