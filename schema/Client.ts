@@ -1,6 +1,9 @@
-import { ParseResult, Schema as S } from '@effect/schema'
+import { Schema as S } from '@effect/schema'
 import { Context, Effect as E, pipe } from 'effect'
+import { buildRegExp, capture, oneOrMore } from 'ts-regex-builder'
 import { createId, Cuid } from './Cuid'
+import { alphanumeric, endWord, startWord } from './regex'
+import { TimeEntryParseError } from './TimeEntryParseError'
 
 // Client
 
@@ -27,11 +30,7 @@ export class ClientsProvider {
   getById = (id: ClientId) => this.index[id]
 
   getByCode = (input: string) => {
-    const [code, subCode] = input.split(/:\s*/gi)
-    const results = this.clients.filter(p => {
-      if (p.code.toLowerCase() === code.toLowerCase()) return true
-      return false
-    })
+    const results = this.clients.filter(p => p.code.toLowerCase() === input.toLowerCase())
     return results[0]
   }
 }
@@ -39,40 +38,55 @@ export class ClientsProvider {
 /** This defines the tag for the ClientsProvider */
 export class Clients extends Context.Tag('Clients')<Clients, ClientsProvider>() {}
 
-/** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
+/** Finds and parses a client code from inside a string of text */
 export class ParsedClient extends S.Class<ParsedClient>('ParsedClient')({
-  /** The client in text form, e.g. `#Support: Ongoing` */
+  /** The client code in text form, e.g. `@aba` */
   text: S.String,
 
   /** The client object */
   client: Client,
 }) {
-  static fromInput(input: string) {
-    return Clients.pipe(
-      E.flatMap(clients => {
-        const clientCodeRegex = /^(?<text>(?:@)(?<code>[a-zA-Z0-9\-]+))$/i
+  static fromInput = (input: string) =>
+    Clients.pipe(
+      E.andThen(clients => {
+        const clientCodeRegex = buildRegExp(
+          [
+            startWord,
+            capture(
+              ['@', capture(oneOrMore(alphanumeric), { name: 'code' })], // code doesn't include the @
+              { name: 'text' }, // text includes the @
+            ),
+            endWord,
+          ],
+          { ignoreCase: true, multiline: true, global: true },
+        )
 
-        let result: { text: string; code: string } | undefined
+        const matches = Array.from(input.matchAll(clientCodeRegex))
+        const results = matches.map(match => match.groups as { text: string; code: string })
 
-        for (const word of input.split(/\s+/)) {
-          const match = word.match(clientCodeRegex)
-          if (match) {
-            const { text = '', code = '' } = match.groups!
+        // Input must contain exactly one project code
+        if (results.length > 1) return E.fail(new MultipleClientsError({ input }))
+        if (results.length === 0) return E.succeed(null)
 
-            // Can't have more than one result
-            if (result) return E.fail(new Error('MULTIPLE_CLIENTS'))
-
-            result = { text, code }
-          }
-        }
-
-        if (result === undefined) return E.succeed(null)
-
-        const client = clients.getByCode(result.code)
+        const { code, text } = results[0]
+        const client = clients.getByCode(code)
         return client //
-          ? E.succeed({ text: result.text, client })
-          : E.fail(new Error('CLIENT_NOT_FOUND'))
+          ? E.succeed({ text, client })
+          : E.fail(new ClientNotFoundError({ input, code }))
       }),
     )
+}
+
+export class MultipleClientsError extends TimeEntryParseError {
+  _tag = 'MULTIPLE_CLIENTS'
+  constructor(context: { input: string }) {
+    super(`An entry can only include one client code`, { context })
+  }
+}
+
+export class ClientNotFoundError extends TimeEntryParseError {
+  _tag = 'CLIENT_NOT_FOUND'
+  constructor(public readonly context: { input: string; code: string }) {
+    super(`The client code "${context.code}" doesn't match a known client.`, { context })
   }
 }

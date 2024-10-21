@@ -1,5 +1,6 @@
 import { ParseResult, Schema as S } from '@effect/schema'
 import { Effect as E } from 'effect'
+import { TimeEntryParseError } from './TimeEntryParseError'
 
 /** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
 export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
@@ -39,13 +40,27 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
           if (duration <= 0 || isNaN(duration)) continue
 
           // Can't have more than one result
-          if (result) return E.fail(new Error('MULTIPLE_DURATIONS'))
+          if (result) return E.fail(new MultipleDurationsError({ input }))
 
           result = { input, text, duration }
         }
       }
     }
 
-    return result ? E.succeed(result) : E.fail(new Error('NO_DURATION'))
+    return result ? E.succeed(result) : E.fail(new NoDurationError({ input }))
+  }
+}
+
+export class MultipleDurationsError extends TimeEntryParseError {
+  _tag = 'MULTIPLE_DURATIONS'
+  constructor(context: { input: string }) {
+    super(`An entry can only have one duration.`, { context })
+  }
+}
+
+export class NoDurationError extends TimeEntryParseError {
+  _tag = 'NO_DURATION'
+  constructor(context: { input: string }) {
+    super(`An entry must include a duration`, { context })
   }
 }

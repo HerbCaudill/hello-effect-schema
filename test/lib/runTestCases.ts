@@ -1,5 +1,6 @@
 import { Effect as E, Either, pipe } from 'effect'
-import { test as _test, assert, expect } from 'vitest'
+import { test as _test, assert, assertType, expect } from 'vitest'
+import { TimeEntryParseError } from '../../schema/TimeEntryParseError'
 
 export const runTestCases = <TestCase extends BaseTestCase, ExpectedSchema extends Object | null>({
   testCases,
@@ -30,8 +31,9 @@ export const runTestCases = <TestCase extends BaseTestCase, ExpectedSchema exten
     test(testName, () => {
       const result = decode(input)
       if (Either.isLeft(result)) {
-        assert(error, `expected success but got error ${result.left}`)
-        expect(result.left.toString()).toContain(error)
+        const actualError = result.left as TimeEntryParseError
+        assert(error, `expected success but got error ${actualError}`)
+        expect(actualError._tag).toContain(error)
       } else {
         assert(!error, `expected error ${error}`)
         const parseResult = result.right

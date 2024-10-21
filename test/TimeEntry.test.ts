@@ -6,11 +6,11 @@ import { Projects, ProjectsProvider } from '../schema/Project'
 import { TimeEntry } from '../schema/TimeEntry'
 import type { UserId } from '../schema/User'
 import { runTestCases, type BaseTestCase } from './lib/runTestCases'
-import { testClients } from './lib/testClients'
-import { testProjects } from './lib/testProjects'
+import { testClients } from './data/clients'
+import { projects } from './data/projects'
 
 describe('TimeEntry', () => {
-  const TestProjects = new ProjectsProvider(testProjects)
+  const TestProjects = new ProjectsProvider(projects)
   const TestClients = new ClientsProvider(testClients)
 
   const testCases = [
@@ -26,20 +26,20 @@ describe('TimeEntry', () => {
     {
       input: '#out 1:15',
       duration: 75,
-      projectId: '0002',
+      projectId: '046',
       description: '',
     },
     {
       input: '#out 1:15 doctor',
       duration: 75,
-      projectId: '0002',
+      projectId: '046',
       description: 'doctor',
     },
     {
       input: '1h #Support: Ongoing @ABA update geography',
       duration: 60,
-      projectId: '0005',
-      clientId: '0001',
+      projectId: '051',
+      clientId: '001',
       description: 'update geography',
     },
   ] as TestCase[]
