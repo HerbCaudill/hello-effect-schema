@@ -25,21 +25,16 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
     const formats = [
       // 2.15, .25, 2.15hrs
       [
-        optional([
-          capture(number, { name: 'hrs' }), //
-        ]),
+        optional([capture(number, { name: 'hrs' })]), //
         ':',
-        capture(number, { name: 'mins' }), //
+        capture(number, { name: 'mins' }),
       ],
 
       // 1h, 2hrs, 1h45, 1h45m
       [
-        capture(number, { name: 'hrs' }), //
+        capture(number, { name: 'hrs' }),
         HR,
-        optional([
-          capture(number, { name: 'mins' }), //
-          optional(MIN),
-        ]),
+        optional([capture(number, { name: 'mins' }), optional(MIN)]),
       ],
 
       // 45m, 45min
@@ -53,16 +48,12 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
         capture([optional(number), '.', number], { name: 'hrsDecimal' }), //
         optional(HR),
       ],
-    ]
-
-    const formatRegexes = formats.map(f =>
-      buildRegExp([startOfString, ...f, endOfString], { ignoreCase: true }),
-    )
+    ].map(f => buildRegExp([startOfString, ...f, endOfString], { ignoreCase: true }))
 
     const results = input
       .split(/\s+/)
-      .flatMap(word =>
-        formatRegexes.map(format => {
+      .map(word => {
+        for (const format of formats) {
           const match = word.match(format)
           if (match) {
             const { text, hrs = '0', mins = '0', hrsDecimal } = match.groups!
@@ -72,10 +63,10 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
               : Number(hrs) * 60 + Number(mins) // hours+minutes
 
             // Only return this if we got a valid non-zero number
-            if (!(duration <= 0 || isNaN(duration))) return { text, duration }
+            if (duration > 0 && !isNaN(duration)) return { text, duration }
           }
-        }),
-      )
+        }
+      })
       .filter(r => r !== undefined)
 
     if (results.length > 1) return E.fail(new MultipleDurationsError({ input }))
