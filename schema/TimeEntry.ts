@@ -1,11 +1,13 @@
 import { Schema as S } from '@effect/schema'
 import { Effect as E, pipe } from 'effect'
-import { Client, ParsedClient } from './Client'
+import { Client } from './Client'
 import { createId, Cuid } from './Cuid'
 import { ParsedDuration } from './Duration'
 import { LocalDateSchema } from './LocalDate'
-import { ParsedProject, Project } from './Project'
+import { Project } from './Project'
 import { UserId } from './User'
+import { ParsedProject } from './ParsedProject'
+import { ParsedClient } from './ParsedClient'
 
 export const TimeEntryId = pipe(Cuid, S.brand('TimeEntryId'))
 export type TimeEntryId = typeof TimeEntryId.Type

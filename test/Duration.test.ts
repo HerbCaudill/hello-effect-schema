@@ -1,6 +1,6 @@
 import { describe, expect } from 'vitest'
 import { ParsedDuration } from '../schema/Duration'
-import { runTestCases, BaseTestCase, only } from './lib/runTestCases'
+import { BaseTestCase, runTestCases } from './lib/runTestCases'
 
 describe('Duration', () => {
   const testCases: TestCase[] = [

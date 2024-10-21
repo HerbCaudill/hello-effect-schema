@@ -8,11 +8,11 @@ import {
   optional,
   startOfString,
 } from 'ts-regex-builder'
-import { TimeEntryParseError } from './TimeEntryParseError'
-import { number } from './regex'
+import { BaseError } from '../lib/BaseError'
+import { number } from '../lib/regex'
 
 /** Finds and parses a duration, expressed in decimal or hours:minutes, from inside a string of text */
-export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
+export class ParsedDuration extends S.Class<ParsedDuration>('ParsedDuration')({
   /** The duration in text form, e.g. `1:15` */
   text: S.String,
 
@@ -75,14 +75,14 @@ export class ParsedDuration extends S.Class<ParsedDuration>('Duration')({
   }
 }
 
-export class MultipleDurationsError extends TimeEntryParseError {
+export class MultipleDurationsError extends BaseError {
   _tag = 'MULTIPLE_DURATIONS'
   constructor(context: { input: string }) {
     super(`An entry can only have one duration.`, { context })
   }
 }
 
-export class NoDurationError extends TimeEntryParseError {
+export class NoDurationError extends BaseError {
   _tag = 'NO_DURATION'
   constructor(context: { input: string }) {
     super(`An entry must include a duration`, { context })
