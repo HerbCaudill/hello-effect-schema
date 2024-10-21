@@ -1,6 +1,7 @@
 import { Client, type ClientId } from '../../schema/Client'
 
-export const testClients = `2scale
+export const clients = `
+2scale
 aba
 abt
 acdivoca
@@ -123,6 +124,7 @@ wwb
 zam`
   .trim()
   .split('\n')
+  .filter(s => s.length)
   .map((line, i) => {
     const code = line.trim()
     const id = i.toString().padStart(3, '0') as ClientId

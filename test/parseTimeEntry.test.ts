@@ -3,15 +3,15 @@ import { Effect as E, pipe } from 'effect'
 import { describe, expect } from 'vitest'
 import { Clients, ClientsProvider } from '../schema/Client'
 import { Projects, ProjectsProvider } from '../schema/Project'
-import { TimeEntry } from '../schema/TimeEntry'
 import type { UserId } from '../schema/User'
 import { runTestCases, type BaseTestCase } from './lib/runTestCases'
-import { testClients } from './data/clients'
+import { clients } from './data/clients'
 import { projects } from './data/projects'
+import { parseTimeEntry } from '../schema/TimeEntry/parseTimeEntry'
 
-describe('TimeEntry', () => {
+describe('parseTimeEntry', () => {
   const TestProjects = new ProjectsProvider(projects)
-  const TestClients = new ClientsProvider(testClients)
+  const TestClients = new ClientsProvider(clients)
 
   const testCases = [
     // failure
@@ -50,11 +50,11 @@ describe('TimeEntry', () => {
       pipe(
         input, //
         input => ({
-          userId: '1234' as UserId,
-          date: LocalDate.now(),
+          userId: '1234' as UserId, // this stuff is provided by the app when an entry is made
+          date: LocalDate.parse(`2021-01-01`),
           input,
         }),
-        TimeEntry.fromInput,
+        parseTimeEntry,
         E.provideService(Projects, TestProjects),
         E.provideService(Clients, TestClients),
       ),

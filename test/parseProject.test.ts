@@ -1,11 +1,11 @@
 import { Effect as E, pipe } from 'effect'
 import { describe, expect } from 'vitest'
 import { Projects, ProjectsProvider } from '../schema/Project'
-import { runTestCases, type BaseTestCase } from './lib/runTestCases'
 import { projects } from './data/projects'
-import { ParsedProject } from '../schema/ParsedProject'
+import { runTestCases, type BaseTestCase } from './lib/runTestCases'
+import { parseProject } from '../schema/TimeEntry/parseProject'
 
-describe('Project', () => {
+describe('parseProject', () => {
   const TestProjects = new ProjectsProvider(projects)
 
   runTestCases({
@@ -38,7 +38,7 @@ describe('Project', () => {
     decoder: (input: string) =>
       pipe(
         input, //
-        ParsedProject.fromInput,
+        parseProject,
         E.provideService(Projects, TestProjects),
       ),
 

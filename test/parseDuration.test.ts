@@ -1,6 +1,6 @@
 import { describe, expect } from 'vitest'
-import { ParsedDuration } from '../schema/Duration'
 import { BaseTestCase, runTestCases } from './lib/runTestCases'
+import { parseDuration } from '../schema/TimeEntry/parseDuration'
 
 describe('Duration', () => {
   const testCases: TestCase[] = [
@@ -74,7 +74,7 @@ describe('Duration', () => {
 
   runTestCases({
     testCases,
-    decoder: ParsedDuration.fromInput,
+    decoder: parseDuration,
     validate: (expected, actual) => {
       expect(actual.duration).toEqual(expected.duration)
     },
