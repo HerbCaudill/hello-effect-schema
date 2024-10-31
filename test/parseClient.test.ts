@@ -10,6 +10,7 @@ describe('parseClient', () => {
   runTestCases({
     testCases: [
       { input: '@aba @chemonics', error: 'MULTIPLE_CLIENTS' },
+      { input: '#out @aaba 1h', error: 'CLIENT_NOT_FOUND' },
       { input: '#out 1h', noClient: true },
       { input: '1h #Support: ongoing @aba', id: '001', text: '@aba' },
       { input: '1h #Ongoing @chemonics', id: '012', text: '@chemonics' },

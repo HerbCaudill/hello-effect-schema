@@ -16,9 +16,6 @@ export class DoneEntry extends S.Class<DoneEntry>('DoneEntry')({
   content: S.String,
   likes: S.optionalWith(S.Array(UserId), { default: () => [], exact: true }),
   timestamp: S.optionalWith(S.DateFromNumber, { default: () => new Date(), exact: true }),
-}) {
-  static decode = S.decodeSync(DoneEntry)
-  static encode = S.encodeSync(DoneEntry)
-}
+}) {}
 
 export type DoneEntryEncoded = typeof DoneEntry.Encoded

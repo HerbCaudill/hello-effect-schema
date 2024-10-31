@@ -27,3 +27,5 @@ export class TimeEntry extends S.Class<TimeEntry>('TimeEntry')({
   input: S.String,
   timestamp: S.optionalWith(S.DateFromSelf, { default: () => new Date(), exact: true }),
 }) {}
+
+export type TimelEntryEncoded = typeof TimeEntry.Encoded

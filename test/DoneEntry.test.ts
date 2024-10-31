@@ -1,11 +1,15 @@
+import { Schema as S } from '@effect/schema'
 import { LocalDate } from '@js-joda/core'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import type { UserId } from '../schema/User'
 import { DoneEntry, type DoneEntryEncoded } from '../schema/DoneEntry'
+import type { UserId } from '../schema/User'
 
 describe('DoneEntry', () => {
+  const decode = S.decodeSync(DoneEntry)
+  const encode = S.encodeSync(DoneEntry)
+
   it('decodes DoneEntry', () => {
-    const decoded = DoneEntry.decode({
+    const decoded = decode({
       userId: '0001',
       date: '2024-06-10',
       content: 'Coded and compiled terabytes of data',
@@ -37,18 +41,18 @@ describe('DoneEntry', () => {
   })
 
   it('encodes DoneEntry', () => {
-    const decoded = DoneEntry.decode({
+    const decoded = decode({
       userId: '0001',
       date: '2024-06-10',
       content: 'Coded and compiled terabytes of data',
     })
 
-    const encoded = DoneEntry.encode(decoded)
+    const encoded = encode(decoded)
 
     expectTypeOf(encoded).toMatchTypeOf<DoneEntryEncoded>()
 
     // round trip
-    const decodedAgain = DoneEntry.decode(encoded)
+    const decodedAgain = decode(encoded)
     expect(decodedAgain).toEqual(decoded)
   })
 })
